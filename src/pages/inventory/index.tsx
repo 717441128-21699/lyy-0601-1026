@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { View, Text, Button, Input, ScrollView, Textarea } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import styles from './index.module.scss'
@@ -23,17 +23,27 @@ const InventoryPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState<AbnormalType | ''>('')
   const [reportDesc, setReportDesc] = useState('')
+  const [inputValue, setInputValue] = useState('')
+
+  useEffect(() => {
+    if (currentActivity) {
+      setSampleCount(currentActivity.remainingSamples)
+      setInputValue(String(currentActivity.remainingSamples))
+    }
+  }, [currentActivity?.remainingSamples, currentActivity?.id])
 
   const stats = useMemo(() => {
     if (!currentActivity) {
-      return { tasters: 0, buyers: 0, rate: 0, remaining: 0 }
+      return { tasters: 0, buyers: 0, rate: 0, remaining: 0, used: 0, target: 50 }
     }
     const rate = calculateConversionRate(currentActivity.usedSamples, currentActivity.purchaseCount)
     return {
       tasters: currentActivity.usedSamples,
       buyers: currentActivity.purchaseCount,
       rate,
-      remaining: currentActivity.remainingSamples
+      remaining: currentActivity.remainingSamples,
+      used: currentActivity.usedSamples,
+      target: currentActivity.targetSamples
     }
   }, [currentActivity])
 
@@ -52,27 +62,65 @@ const InventoryPage: React.FC = () => {
   }, [feedbacks, currentActivity])
 
   const progressPercent = useMemo(() => {
-    if (!currentActivity) return 0
+    if (!currentActivity || currentActivity.targetSamples === 0) return 0
     return Math.min((currentActivity.usedSamples / currentActivity.targetSamples) * 100, 100)
   }, [currentActivity])
 
-  const handleSampleChange = (delta: number) => {
-    const newValue = Math.max(0, sampleCount + delta)
-    setSampleCount(newValue)
-    if (currentActivity) {
-      const used = currentActivity.targetSamples - newValue
-      updateSamples(used, newValue)
+  const validateAndUpdateSamples = (newRemaining: number) => {
+    if (!currentActivity) return
+
+    const target = currentActivity.targetSamples
+    const validRemaining = Math.max(0, Math.min(newRemaining, target))
+    const validUsed = target - validRemaining
+
+    if (validUsed < 0) {
+      console.error('[Samples] 已使用数量不能为负数')
+      Taro.showToast({ title: '数量不能超过目标值', icon: 'none' })
+      return
     }
+
+    setSampleCount(validRemaining)
+    setInputValue(String(validRemaining))
+    updateSamples(validUsed, validRemaining)
+  }
+
+  const handleSampleChange = (delta: number) => {
+    if (!currentActivity || currentActivity.status !== 'ongoing') {
+      Taro.showToast({ title: '请先开始活动', icon: 'none' })
+      return
+    }
+    const newValue = sampleCount + delta
+    validateAndUpdateSamples(newValue)
   }
 
   const handleSampleInput = (e: { detail: { value: string } }) => {
-    const value = parseInt(e.detail.value) || 0
-    const newValue = Math.max(0, value)
-    setSampleCount(newValue)
-    if (currentActivity) {
-      const used = currentActivity.targetSamples - newValue
-      updateSamples(used, newValue)
+    const value = e.detail.value
+    setInputValue(value)
+
+    if (value === '' || value === '-') {
+      return
     }
+
+    const numValue = parseInt(value)
+    if (isNaN(numValue)) {
+      return
+    }
+
+    validateAndUpdateSamples(numValue)
+  }
+
+  const handleSampleBlur = () => {
+    if (!currentActivity) return
+
+    const value = parseInt(inputValue)
+    if (isNaN(value) || inputValue === '') {
+      const defaultValue = currentActivity.remainingSamples
+      setSampleCount(defaultValue)
+      setInputValue(String(defaultValue))
+      return
+    }
+
+    validateAndUpdateSamples(value)
   }
 
   const handleAbnormalClick = (type: AbnormalType) => {
@@ -121,6 +169,8 @@ const InventoryPage: React.FC = () => {
     }
   }
 
+  const isActivityOngoing = currentActivity?.status === 'ongoing'
+
   return (
     <View className={styles.page}>
       <ScrollView className={styles.content} scrollY>
@@ -128,7 +178,7 @@ const InventoryPage: React.FC = () => {
           <StatCard
             title="试吃人数"
             value={stats.tasters}
-            subtitle={`目标${currentActivity?.targetSamples || 50}份`}
+            subtitle={`目标${stats.target}份`}
             color="primary"
           />
           <StatCard
@@ -160,20 +210,25 @@ const InventoryPage: React.FC = () => {
             </View>
             <View className={styles.sampleControl}>
               <Button
-                className={styles.sampleBtn}
+                className={classnames(styles.sampleBtn, !isActivityOngoing && styles.sampleBtnDisabled)}
                 onClick={() => handleSampleChange(-1)}
+                disabled={!isActivityOngoing}
               >
                 -
               </Button>
               <Input
-                className={styles.sampleInput}
+                className={classnames(styles.sampleInput, !isActivityOngoing && styles.sampleInputDisabled)}
                 type="number"
-                value={String(sampleCount)}
+                value={inputValue}
                 onInput={handleSampleInput}
+                onBlur={handleSampleBlur}
+                disabled={!isActivityOngoing}
+                placeholder="请输入"
               />
               <Button
-                className={styles.sampleBtn}
+                className={classnames(styles.sampleBtn, !isActivityOngoing && styles.sampleBtnDisabled)}
                 onClick={() => handleSampleChange(1)}
+                disabled={!isActivityOngoing}
               >
                 +
               </Button>
@@ -181,8 +236,8 @@ const InventoryPage: React.FC = () => {
           </View>
 
           <View className={styles.sampleTarget}>
-            <Text>已使用 {currentActivity?.usedSamples || 0} 份</Text>
-            <Text>目标 {currentActivity?.targetSamples || 50} 份</Text>
+            <Text>已使用 {stats.used} 份</Text>
+            <Text>目标 {stats.target} 份</Text>
           </View>
           <View className={styles.progressBar}>
             <View
@@ -190,6 +245,13 @@ const InventoryPage: React.FC = () => {
               style={{ width: `${progressPercent}%` }}
             ></View>
           </View>
+
+          {!isActivityOngoing && currentActivity && (
+            <Text className={styles.sampleHint}>活动已结束，无法修改样品数量</Text>
+          )}
+          {!currentActivity && (
+            <Text className={styles.sampleHint}>请先在今日活动页面开始活动</Text>
+          )}
         </View>
 
         <View className={styles.sectionCard}>

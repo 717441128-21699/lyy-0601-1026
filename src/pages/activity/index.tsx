@@ -8,7 +8,6 @@ import { useActivityStore } from '@/store/useActivityStore'
 import StatCard from '@/components/StatCard'
 import { calculateConversionRate, formatDateTime, statusLabels } from '@/utils'
 
-
 const ActivityPage: React.FC = () => {
   const {
     currentActivity,
@@ -19,7 +18,8 @@ const ActivityPage: React.FC = () => {
     setSelectedStore,
     setSelectedProduct,
     startActivity,
-    endActivity
+    endActivity,
+    resetActivity
   } = useActivityStore()
 
   const todayDate = dayjs().format('YYYY年MM月DD日 dddd')
@@ -46,11 +46,15 @@ const ActivityPage: React.FC = () => {
     }
     Taro.showModal({
       title: '确认开始活动',
-      content: `门店：${selectedStore.name}\n商品：${selectedProduct.name}`,
+      content: `门店：${selectedStore.name}\n商品：${selectedProduct.name} ${selectedProduct.spec}`,
       success: (res) => {
         if (res.confirm) {
-          startActivity()
-          Taro.showToast({ title: '活动已开始', icon: 'success' })
+          const success = startActivity()
+          if (success) {
+            Taro.showToast({ title: '活动已开始', icon: 'success' })
+          } else {
+            Taro.showToast({ title: '开始失败，请重试', icon: 'none' })
+          }
         }
       }
     })
@@ -63,14 +67,41 @@ const ActivityPage: React.FC = () => {
       confirmColor: '#F53F3F',
       success: (res) => {
         if (res.confirm) {
-          endActivity()
-          Taro.showToast({ title: '活动已结束', icon: 'success' })
+          const success = endActivity()
+          if (success) {
+            Taro.showToast({ title: '活动已结束', icon: 'success' })
+          }
+        }
+      }
+    })
+  }
+
+  const handleStartNewActivity = () => {
+    Taro.showModal({
+      title: '开始新活动',
+      content: '将清除当前活动数据，开始一场新的试吃活动？',
+      success: (res) => {
+        if (res.confirm) {
+          resetActivity()
+          Taro.showToast({ title: '请选择新活动', icon: 'success' })
         }
       }
     })
   }
 
   const canStart = selectedStore && selectedProduct && currentActivity?.status !== 'ongoing'
+
+  const getStoreIndex = () => {
+    if (!selectedStore) return 0
+    const idx = stores.findIndex((s) => s.id === selectedStore.id)
+    return idx >= 0 ? idx : 0
+  }
+
+  const getProductIndex = () => {
+    if (!selectedProduct) return 0
+    const idx = products.findIndex((p) => p.id === selectedProduct.id)
+    return idx >= 0 ? idx : 0
+  }
 
   return (
     <View className={styles.page}>
@@ -92,7 +123,7 @@ const ActivityPage: React.FC = () => {
       </View>
 
       <ScrollView className={styles.content} scrollY>
-        {currentActivity?.status === 'ongoing' || currentActivity?.status === 'completed' ? (
+        {currentActivity?.status === 'ongoing' ? (
           <>
             <View className={styles.sectionCard}>
               <Text className={styles.sectionTitle}>活动概览</Text>
@@ -115,7 +146,7 @@ const ActivityPage: React.FC = () => {
                 <StatCard
                   title="试吃人数"
                   value={currentActivity.usedSamples}
-                  subtitle="目标50份"
+                  subtitle={`目标${currentActivity.targetSamples}份`}
                   color="primary"
                 />
                 <StatCard
@@ -153,6 +184,59 @@ const ActivityPage: React.FC = () => {
               </View>
             </View>
           </>
+        ) : currentActivity?.status === 'completed' ? (
+          <>
+            <View className={styles.sectionCard}>
+              <Text className={styles.sectionTitle}>已结束活动</Text>
+              <View className={styles.activityInfo}>
+                <Image
+                  className={styles.activityImage}
+                  src={currentActivity.productImage}
+                  mode="aspectFill"
+                />
+                <View className={styles.activityDetail}>
+                  <Text className={styles.activityName}>{currentActivity.productName}</Text>
+                  <Text className={styles.activityStore}>📍 {currentActivity.storeName}</Text>
+                  <Text className={styles.activityTime}>
+                    活动时间：{formatDateTime(currentActivity.startTime)} - {formatDateTime(currentActivity.endTime!)}
+                  </Text>
+                </View>
+              </View>
+
+              <View className={styles.statsGrid}>
+                <StatCard
+                  title="试吃总人数"
+                  value={currentActivity.usedSamples}
+                  color="primary"
+                />
+                <StatCard
+                  title="购买人数"
+                  value={currentActivity.purchaseCount}
+                  color="success"
+                />
+                <StatCard
+                  title="转化率"
+                  value={`${conversionRate}%`}
+                  color="warning"
+                />
+                <StatCard
+                  title="反馈数"
+                  value={currentActivity.totalFeedbacks}
+                  color={currentActivity.totalFeedbacks > 0 ? 'success' : 'primary'}
+                />
+              </View>
+
+              <Button
+                className={classnames(styles.actionButton, styles.buttonStart, {
+                  [styles.buttonDisabled]: !canStart
+                })}
+                onClick={handleStartNewActivity}
+              >
+                🔄 开始新活动
+              </Button>
+              <Text className={styles.buttonHint}>开始新活动后可前往活动复盘查看历史数据</Text>
+            </View>
+          </>
         ) : (
           <>
             <View className={styles.sectionCard}>
@@ -160,9 +244,8 @@ const ActivityPage: React.FC = () => {
               <Picker
                 mode="selector"
                 range={stores.map((s) => s.name)}
-                value={stores.findIndex((s) => s.id === selectedStore?.id)}
+                value={getStoreIndex()}
                 onChange={handleStoreChange}
-                disabled={currentActivity?.status === ('ongoing' as any)}
               >
                 <View className={styles.pickerRow}>
                   <Text className={styles.pickerLabel}>当班门店</Text>
@@ -182,9 +265,8 @@ const ActivityPage: React.FC = () => {
               <Picker
                 mode="selector"
                 range={products.map((p) => `${p.name} - ${p.spec}`)}
-                value={products.findIndex((p) => p.id === selectedProduct?.id)}
+                value={getProductIndex()}
                 onChange={handleProductChange}
-                disabled={currentActivity?.status === ('ongoing' as any)}
               >
                 <View className={styles.pickerRow}>
                   <Text className={styles.pickerLabel}>试吃商品</Text>
@@ -233,11 +315,12 @@ const ActivityPage: React.FC = () => {
         ) : currentActivity?.status === 'completed' ? (
           <>
             <Button
-              className={classnames(styles.actionButton, styles.buttonStart)} disabled
+              className={classnames(styles.actionButton, styles.buttonStart)}
+              onClick={handleStartNewActivity}
             >
-              活动已结束
+              开始新活动
             </Button>
-            <Text className={styles.buttonHint}>可前往活动复盘查看本次活动数据</Text>
+            <Text className={styles.buttonHint}>可前往活动复盘查看历史活动数据</Text>
           </>
         ) : (
           <>

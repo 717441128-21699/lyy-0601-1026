@@ -49,6 +49,15 @@ export interface Activity {
   purchaseCount: number
 }
 
+export interface PersistedState {
+  currentActivity: Activity | null
+  feedbacks: Feedback[]
+  abnormalReports: AbnormalReport[]
+  selectedStoreId: string | null
+  selectedProductId: string | null
+  activityHistory: Activity[]
+}
+
 export interface InventoryReport {
   activityId: string
   totalTasters: number

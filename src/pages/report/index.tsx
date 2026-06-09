@@ -1,13 +1,11 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { View, Text, Button, ScrollView, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import styles from './index.module.scss'
 import classnames from 'classnames'
-import { mockReportData } from '@/data/feedbacks'
-import { mockStores } from '@/data/stores'
-import { mockProducts } from '@/data/products'
 import { ReportData } from '@/types'
 import EmptyState from '@/components/EmptyState'
+import { useActivityStore } from '@/store/useActivityStore'
 
 const ReportPage: React.FC = () => {
   const [selectedStore, setSelectedStore] = useState('全部')
@@ -16,23 +14,45 @@ const ReportPage: React.FC = () => {
   const [showFilterModal, setShowFilterModal] = useState<string | null>(null)
   const [tempFilterValue, setTempFilterValue] = useState('')
 
-  const reportData: ReportData = mockReportData
+  const { getReportData, activityHistory, currentActivity } = useActivityStore()
+
+  const reportData: ReportData | null = useMemo(() => {
+    return getReportData(selectedStore, selectedProduct, selectedPeriod)
+  }, [selectedStore, selectedProduct, selectedPeriod, getReportData, activityHistory, currentActivity])
 
   const maxTimeCount = useMemo(() => {
+    if (!reportData) return 1
     return Math.max(...reportData.timeDistribution.map(d => d.count), 1)
   }, [reportData])
 
   const maxAgeCount = useMemo(() => {
+    if (!reportData) return 1
     return Math.max(...reportData.ageDistribution.map(d => d.count), 1)
   }, [reportData])
 
   const maxTagCount = useMemo(() => {
+    if (!reportData) return 1
     return Math.max(...reportData.topTasteTags.map(d => d.count), 1)
   }, [reportData])
 
-  const storeOptions = ['全部', ...mockStores.map(s => s.name)]
-  const productOptions = ['全部', ...mockProducts.map(p => p.name)]
+  const storeOptions = useMemo(() => {
+    const storeNames = new Set(activityHistory.map(a => a.storeName))
+    if (currentActivity) storeNames.add(currentActivity.storeName)
+    return ['全部', ...Array.from(storeNames)]
+  }, [activityHistory, currentActivity])
+
+  const productOptions = useMemo(() => {
+    const productNames = new Set(activityHistory.map(a => a.productName.split(' ')[0]))
+    if (currentActivity) productNames.add(currentActivity.productName.split(' ')[0])
+    return ['全部', ...Array.from(productNames)]
+  }, [activityHistory, currentActivity])
+
   const periodOptions = ['今日', '本周', '本月', '全部']
+
+  useEffect(() => {
+    console.log('[Report] 筛选条件:', { store: selectedStore, product: selectedProduct, period: selectedPeriod })
+    console.log('[Report] 复盘数据:', reportData)
+  }, [selectedStore, selectedProduct, selectedPeriod, reportData])
 
   const handleFilterClick = (type: string, currentValue: string) => {
     setTempFilterValue(currentValue)
@@ -52,11 +72,6 @@ const ReportPage: React.FC = () => {
       setSelectedPeriod(tempFilterValue)
     }
     setShowFilterModal(null)
-    console.log('[Report] 筛选条件变更:', {
-      store: selectedStore,
-      product: selectedProduct,
-      period: selectedPeriod
-    })
   }
 
   const getFilterOptions = () => {
@@ -80,9 +95,13 @@ const ReportPage: React.FC = () => {
   }
 
   const handleExport = () => {
+    if (!reportData) {
+      Taro.showToast({ title: '暂无数据可导出', icon: 'none' })
+      return
+    }
     Taro.showModal({
       title: '导出复盘报告',
-      content: '确认生成并导出本次活动复盘报告？',
+      content: `门店：${reportData.storeName}\n商品：${reportData.productName}\n时段：${reportData.period}\n\n试吃：${reportData.totalTasters}人\n购买：${reportData.purchaseCount}人\n转化率：${reportData.conversionRate}%`,
       success: (res) => {
         if (res.confirm) {
           Taro.showLoading({ title: '生成中...' })
@@ -92,14 +111,13 @@ const ReportPage: React.FC = () => {
               title: '报告已生成',
               icon: 'success'
             })
-            console.log('[Report] 导出复盘报告')
           }, 1500)
         }
       }
     })
   }
 
-  const hasData = reportData.totalTasters > 0
+  const hasData = reportData && reportData.totalTasters > 0
 
   return (
     <View className={styles.page}>
@@ -134,25 +152,25 @@ const ReportPage: React.FC = () => {
               <View className={styles.overviewHeader}>
                 <View>
                   <Text className={styles.overviewTitle}>活动复盘报告</Text>
-                  <Text className={styles.overviewPeriod}>{reportData.period}</Text>
+                  <Text className={styles.overviewPeriod}>{reportData!.period}</Text>
                 </View>
                 <View className={styles.overviewBadge}>已完成</View>
               </View>
               <View className={styles.overviewStats}>
                 <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData.totalTasters}</Text>
+                  <Text className={styles.overviewValue}>{reportData!.totalTasters}</Text>
                   <Text className={styles.overviewLabel}>试吃总人数</Text>
                 </View>
                 <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData.purchaseCount}</Text>
+                  <Text className={styles.overviewValue}>{reportData!.purchaseCount}</Text>
                   <Text className={styles.overviewLabel}>购买人数</Text>
                 </View>
                 <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData.conversionRate}%</Text>
+                  <Text className={styles.overviewValue}>{reportData!.conversionRate}%</Text>
                   <Text className={styles.overviewLabel}>购买转化率</Text>
                 </View>
                 <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData.avgTasteRating}</Text>
+                  <Text className={styles.overviewValue}>{reportData!.avgTasteRating}</Text>
                   <Text className={styles.overviewLabel}>平均口味评分</Text>
                 </View>
               </View>
@@ -164,7 +182,7 @@ const ReportPage: React.FC = () => {
                 <Text className={styles.sectionMore}>按小时统计</Text>
               </View>
               <View className={styles.timeChart}>
-                {reportData.timeDistribution.map((item, index) => {
+                {reportData!.timeDistribution.map((item, index) => {
                   const widthPercent = (item.count / maxTimeCount) * 100
                   return (
                     <View key={index} className={styles.timeBar}>
@@ -188,10 +206,10 @@ const ReportPage: React.FC = () => {
             <View className={styles.sectionCard}>
               <View className={styles.sectionHeader}>
                 <Text className={styles.sectionTitle}>👥 年龄分布</Text>
-                <Text className={styles.sectionMore}>共 {reportData.totalTasters} 人</Text>
+                <Text className={styles.sectionMore}>共 {reportData!.totalTasters} 人</Text>
               </View>
               <View className={styles.ageChart}>
-                {reportData.ageDistribution.map((item, index) => {
+                {reportData!.ageDistribution.map((item, index) => {
                   const progress = (item.count / maxAgeCount) * 100
                   return (
                     <View key={index} className={styles.ageItem}>
@@ -206,7 +224,7 @@ const ReportPage: React.FC = () => {
                       <View className={styles.ageInfo}>
                         <Text className={styles.ageName}>{item.group}</Text>
                         <Text className={styles.ageCount}>
-                          占比 {((item.count / reportData.totalTasters) * 100).toFixed(1)}%
+                          占比 {reportData!.totalTasters > 0 ? ((item.count / reportData!.totalTasters) * 100).toFixed(1) : 0}%
                         </Text>
                       </View>
                     </View>
@@ -221,16 +239,20 @@ const ReportPage: React.FC = () => {
                 <Text className={styles.sectionMore}>口味标签</Text>
               </View>
               <View className={styles.tagsCloud}>
-                {reportData.topTasteTags.map((item, index) => (
-                  <View
-                    key={index}
-                    className={styles.tagCloudItem}
-                    style={{ fontSize: getTagFontSize(item.count) }}
-                  >
-                    <Text className={styles.tagCloudText}>{item.tag}</Text>
-                    <Text className={styles.tagCloudCount}>{item.count}</Text>
-                  </View>
-                ))}
+                {reportData!.topTasteTags.length > 0 ? (
+                  reportData!.topTasteTags.map((item, index) => (
+                    <View
+                      key={index}
+                      className={styles.tagCloudItem}
+                      style={{ fontSize: getTagFontSize(item.count) }}
+                    >
+                      <Text className={styles.tagCloudText}>{item.tag}</Text>
+                      <Text className={styles.tagCloudCount}>{item.count}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text className={styles.noTags}>暂无评价标签</Text>
+                )}
               </View>
             </View>
 
@@ -241,13 +263,13 @@ const ReportPage: React.FC = () => {
               <View className={styles.activityInfo}>
                 <Image
                   className={styles.activityImage}
-                  src="https://picsum.photos/id/292/300/300"
+                  src={currentActivity?.productImage || activityHistory[0]?.productImage || 'https://picsum.photos/id/292/300/300'}
                   mode="aspectFill"
                 />
                 <View className={styles.activityDetail}>
-                  <Text className={styles.activityName}>{reportData.productName}</Text>
-                  <Text className={styles.activityStore}>📍 {reportData.storeName}</Text>
-                  <Text className={styles.activityTime}>活动时段：{reportData.period}</Text>
+                  <Text className={styles.activityName}>{reportData!.productName}</Text>
+                  <Text className={styles.activityStore}>📍 {reportData!.storeName}</Text>
+                  <Text className={styles.activityTime}>活动时段：{reportData!.period}</Text>
                 </View>
               </View>
             </View>
@@ -260,9 +282,14 @@ const ReportPage: React.FC = () => {
           <View className={styles.emptyReport}>
             <EmptyState
               title="暂无复盘数据"
-              description="活动结束后将自动生成复盘报告"
+              description={activityHistory.length > 0 ? '请调整筛选条件查看数据' : '活动结束后将自动生成复盘报告'}
               icon="📊"
             />
+            {activityHistory.length > 0 && (
+              <Text className={styles.emptyHint}>
+                已有 {activityHistory.length} 条历史活动记录，请尝试选择不同筛选条件
+              </Text>
+            )}
           </View>
         )}
       </ScrollView>
