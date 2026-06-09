@@ -1,0 +1,383 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: $spacing-lg;
+}
+
+.content {
+  padding: $spacing-lg;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.sectionCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  &::before {
+    content: '';
+    width: 8rpx;
+    height: 32rpx;
+    background: $color-primary;
+    border-radius: 4rpx;
+  }
+}
+
+.sampleManager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-lg;
+}
+
+.sampleInfo {
+  flex: 1;
+}
+
+.sampleLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.sampleValue {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+}
+
+.sampleUnit {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-left: $spacing-xs;
+}
+
+.sampleControl {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.sampleBtn {
+  @include button-reset;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: $radius-round;
+  background: $color-bg-page;
+  border: 2rpx solid $color-border;
+  font-size: $font-size-xl;
+  color: $color-text-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-fast;
+
+  &:active {
+    transform: scale(0.9);
+    background: $color-primary;
+    color: $color-text-white;
+    border-color: $color-primary;
+  }
+}
+
+.sampleInput {
+  width: 120rpx;
+  height: 72rpx;
+  text-align: center;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-md;
+  background: $color-bg-page;
+}
+
+.sampleTarget {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx solid $color-divider;
+  display: flex;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.progressBar {
+  height: 12rpx;
+  background: $color-bg-page;
+  border-radius: 6rpx;
+  margin-top: $spacing-sm;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: $gradient-primary;
+  border-radius: 6rpx;
+  transition: width $transition-base;
+}
+
+.abnormalButtons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $spacing-md;
+}
+
+.abnormalBtn {
+  @include button-reset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-lg $spacing-sm;
+  border-radius: $radius-md;
+  transition: all $transition-fast;
+  min-height: 160rpx;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.btnOutStock {
+    background: rgba(255, 125, 0, 0.1);
+    border: 2rpx solid rgba(255, 125, 0, 0.3);
+  }
+
+  &.btnPriceError {
+    background: rgba(245, 63, 63, 0.1);
+    border: 2rpx solid rgba(245, 63, 63, 0.3);
+  }
+
+  &.btnCompetitor {
+    background: rgba(134, 144, 156, 0.1);
+    border: 2rpx solid rgba(134, 144, 156, 0.3);
+  }
+}
+
+.abnormalIcon {
+  font-size: 48rpx;
+  margin-bottom: $spacing-sm;
+}
+
+.abnormalLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  .btnOutStock & {
+    color: $color-warning;
+  }
+
+  .btnPriceError & {
+    color: $color-error;
+  }
+
+  .btnCompetitor & {
+    color: $color-text-secondary;
+  }
+}
+
+.problemsSection {
+  margin-top: $spacing-lg;
+}
+
+.problemsTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.problemsScroll {
+  @include scroll-x-container;
+  padding-bottom: $spacing-sm;
+}
+
+.problemTag {
+  @include scroll-x-item(auto);
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 16rpx 24rpx;
+  background: $color-bg-page;
+  border-radius: $radius-button;
+  margin-right: $spacing-sm;
+  white-space: nowrap;
+}
+
+.problemText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.problemCount {
+  background: $color-error;
+  color: $color-text-white;
+  font-size: $font-size-xs;
+  padding: 2rpx 12rpx;
+  border-radius: $radius-round;
+  font-weight: $font-weight-medium;
+}
+
+.reportList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.reportItem {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+}
+
+.reportHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.reportType {
+  font-size: $font-size-xs;
+  padding: 6rpx 16rpx;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+
+  &.typeOutStock {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.typePriceError {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+
+  &.typeCompetitor {
+    background: rgba(134, 144, 156, 0.1);
+    color: $color-text-secondary;
+  }
+}
+
+.reportTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.reportDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-normal;
+}
+
+.modalMask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+}
+
+.modalContent {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  width: 100%;
+  max-width: 600rpx;
+}
+
+.modalTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  text-align: center;
+  margin-bottom: $spacing-lg;
+}
+
+.modalInput {
+  width: 100%;
+  min-height: 200rpx;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  line-height: $line-height-normal;
+  margin-bottom: $spacing-xl;
+}
+
+.modalActions {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.modalBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &.btnCancel {
+    background: $color-bg-page;
+    color: $color-text-secondary;
+  }
+
+  &.btnConfirm {
+    background: $gradient-secondary;
+    color: $color-text-white;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.emptyReport {
+  margin-top: $spacing-xl;
+}
+
+.listHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.listTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.listCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}

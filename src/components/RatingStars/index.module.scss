@@ -1,0 +1,41 @@
+@use '@/styles/variables.scss' as *;
+
+.ratingStars {
+  display: flex;
+  gap: 8rpx;
+
+  &.sizeSm {
+    gap: 4rpx;
+  }
+
+  &.sizeLg {
+    gap: 16rpx;
+  }
+}
+
+.star {
+  color: $color-border;
+  transition: all $transition-fast;
+
+  &.sizeSm {
+    font-size: $font-size-md;
+  }
+
+  &.sizeMd {
+    font-size: $font-size-xl;
+  }
+
+  &.sizeLg {
+    font-size: $font-size-xxl;
+  }
+
+  &.starActive {
+    color: #ffc300;
+  }
+
+  &.starClickable {
+    &:active {
+      transform: scale(1.2);
+    }
+  }
+}

@@ -1,0 +1,370 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background: $color-bg-card;
+}
+
+.searchInput {
+  flex: 1;
+  height: 80rpx;
+  background: $color-bg-page;
+  border-radius: $radius-button;
+  padding: 0 $spacing-lg;
+  font-size: $font-size-md;
+  display: flex;
+  align-items: center;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+
+  &:active {
+    border-color: $color-primary;
+  }
+}
+
+.searchIcon {
+  color: $color-text-tertiary;
+  margin-right: $spacing-sm;
+}
+
+.scanButton {
+  @include button-reset;
+  height: 80rpx;
+  padding: 0 $spacing-lg;
+  background: $gradient-primary;
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.content {
+  padding: 0 $spacing-lg $spacing-lg;
+}
+
+.scanCard {
+  background: $gradient-primary;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-lg;
+  min-height: 200rpx;
+  box-shadow: $shadow-card;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.scanIcon {
+  font-size: 80rpx;
+}
+
+.scanText {
+  color: $color-text-white;
+}
+
+.scanTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-xs;
+}
+
+.scanDesc {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: $spacing-md 0;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.sectionCount {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.productDetail {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.detailHeader {
+  display: flex;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.detailImage {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+  background: $color-bg-page;
+}
+
+.detailInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.detailName {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.detailSpec {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.detailBarcode {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.detailPrice {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-sm;
+  margin-top: $spacing-sm;
+}
+
+.activityPrice {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-price-text;
+}
+
+.originalPrice {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  text-decoration: line-through;
+}
+
+.discountBadge {
+  background: $color-tag-abnormal-bg;
+  color: $color-tag-abnormal-text;
+  font-size: $font-size-xs;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-xs;
+  font-weight: $font-weight-medium;
+}
+
+.detailSection {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 1rpx solid $color-divider;
+}
+
+.detailSectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.sellingPoints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.sellingPoint {
+  background: $color-tag-taste-bg;
+  color: $color-tag-taste-text;
+  font-size: $font-size-sm;
+  padding: 10rpx 20rpx;
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &::before {
+    content: '✓';
+    font-weight: $font-weight-bold;
+  }
+}
+
+.actionRow {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+
+.actionBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &.btnPrimary {
+    background: $gradient-secondary;
+    color: $color-text-white;
+  }
+
+  &.btnOutline {
+    background: $color-bg-card;
+    border: 2rpx solid $color-primary;
+    color: $color-primary;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.productList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.productItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  display: flex;
+  gap: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: $shadow-card-hover;
+  }
+}
+
+.productItemImage {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+  background: $color-bg-page;
+}
+
+.productItemInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.productItemName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.productItemSpec {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.productItemPrice {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-price-text;
+}
+
+.scanAnimation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanFrame {
+  width: 400rpx;
+  height: 400rpx;
+  border: 4rpx solid $color-primary;
+  border-radius: $radius-md;
+  position: relative;
+  overflow: hidden;
+}
+
+.scanLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: $color-primary;
+  box-shadow: 0 0 20rpx $color-primary;
+  animation: scanMove 2s linear infinite;
+}
+
+@keyframes scanMove {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+.scanHint {
+  color: $color-text-white;
+  font-size: $font-size-md;
+  margin-top: $spacing-xl;
+}
+
+.cancelBtn {
+  @include button-reset;
+  margin-top: $spacing-xl;
+  padding: $spacing-md $spacing-xl;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-md;
+
+  &:active {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}

@@ -1,0 +1,453 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: $spacing-xl;
+}
+
+.filterBar {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  background: $color-bg-card;
+  border-bottom: 1rpx solid $color-divider;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.filterItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  min-height: 72rpx;
+  transition: all $transition-fast;
+
+  &:active {
+    background: $color-bg-hover;
+  }
+
+  &.filterActive {
+    background: rgba(22, 93, 255, 0.1);
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.filterArrow {
+  font-size: $font-size-sm;
+  transition: transform $transition-fast;
+
+  .filterActive & {
+    transform: rotate(180deg);
+  }
+}
+
+.content {
+  padding: $spacing-lg;
+}
+
+.overviewCard {
+  background: $gradient-primary;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-md;
+  color: $color-text-white;
+  box-shadow: $shadow-card;
+}
+
+.overviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-lg;
+}
+
+.overviewTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-semibold;
+}
+
+.overviewPeriod {
+  font-size: $font-size-xs;
+  opacity: 0.9;
+  margin-top: $spacing-xs;
+}
+
+.overviewBadge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+}
+
+.overviewStats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-lg;
+}
+
+.overviewStat {
+  text-align: center;
+}
+
+.overviewValue {
+  font-size: $font-size-xxl * 1.5;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  margin-bottom: $spacing-xs;
+}
+
+.overviewLabel {
+  font-size: $font-size-xs;
+  opacity: 0.9;
+}
+
+.sectionCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  &::before {
+    content: '';
+    width: 8rpx;
+    height: 32rpx;
+    background: $color-primary;
+    border-radius: 4rpx;
+  }
+}
+
+.sectionMore {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.timeChart {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.timeBar {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+}
+
+.timeLabel {
+  width: 100rpx;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  flex-shrink: 0;
+}
+
+.timeBarFill {
+  flex: 1;
+  height: 32rpx;
+  background: $color-bg-page;
+  border-radius: 16rpx;
+  overflow: hidden;
+  position: relative;
+}
+
+.timeBarInner {
+  height: 100%;
+  background: $gradient-primary;
+  border-radius: 16rpx;
+  transition: width $transition-base;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: $spacing-sm;
+}
+
+.timeBarCount {
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  font-weight: $font-weight-medium;
+}
+
+.ageChart {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $spacing-md;
+}
+
+.ageItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+}
+
+.ageRing {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ageRingChild {
+  background: conic-gradient($color-primary var(--progress, 0%), rgba(22, 93, 255, 0.2) 0);
+  color: $color-primary;
+}
+
+.ageRingTeen {
+  background: conic-gradient($color-success var(--progress, 0%), rgba(0, 180, 42, 0.2) 0);
+  color: $color-success;
+}
+
+.ageRingAdult {
+  background: conic-gradient($color-warning var(--progress, 0%), rgba(255, 125, 0, 0.2) 0);
+  color: $color-warning;
+}
+
+.ageRingSenior {
+  background: conic-gradient($color-text-tertiary var(--progress, 0%), rgba(134, 144, 156, 0.2) 0);
+  color: $color-text-tertiary;
+}
+
+.ageRingInner {
+  width: 60rpx;
+  height: 60rpx;
+  background: $color-bg-card;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ageInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.ageName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.ageCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.tagsCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  justify-content: center;
+  padding: $spacing-md 0;
+}
+
+.tagCloudItem {
+  padding: 12rpx 24rpx;
+  border-radius: $radius-button;
+  background: $color-tag-taste-bg;
+  color: $color-tag-taste-text;
+  transition: all $transition-fast;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.tagCloudText {
+  font-weight: $font-weight-medium;
+}
+
+.tagCloudCount {
+  font-size: $font-size-xs;
+  opacity: 0.8;
+}
+
+.activityInfo {
+  display: flex;
+  gap: $spacing-lg;
+  align-items: center;
+}
+
+.activityImage {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+  background: $color-bg-page;
+}
+
+.activityDetail {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityName {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.activityStore {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.activityTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.exportBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  background: $gradient-secondary;
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-top: $spacing-md;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.emptyReport {
+  margin-top: $spacing-xl * 2;
+}
+
+.filterModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+}
+
+.filterContent {
+  background: $color-bg-card;
+  border-radius: $radius-lg $radius-lg 0 0;
+  width: 100%;
+  max-height: 70vh;
+  padding: $spacing-lg;
+}
+
+.filterModalTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  text-align: center;
+  margin-bottom: $spacing-lg;
+}
+
+.filterOptions {
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.filterOption {
+  padding: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    background: $color-bg-hover;
+  }
+
+  &.optionSelected {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+}
+
+.filterCheck {
+  color: $color-primary;
+  font-size: $font-size-lg;
+}
+
+.filterModalActions {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-xl;
+}
+
+.filterModalBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  transition: all $transition-base;
+
+  &.btnCancel {
+    background: $color-bg-page;
+    color: $color-text-secondary;
+  }
+
+  &.btnConfirm {
+    background: $gradient-primary;
+    color: $color-text-white;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}

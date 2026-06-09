@@ -1,0 +1,37 @@
+@use '@/styles/variables.scss' as *;
+
+.tagContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.tagItem {
+  padding: 16rpx 28rpx;
+  background: $color-bg-page;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-button;
+  transition: all $transition-fast;
+  @include flex-center;
+  min-width: 120rpx;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.tagSelected {
+    background: $color-primary;
+    border-color: $color-primary;
+  }
+}
+
+.tagText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  white-space: nowrap;
+
+  &.tagTextSelected {
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+}

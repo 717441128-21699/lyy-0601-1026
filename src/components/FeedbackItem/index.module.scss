@@ -1,0 +1,130 @@
+@use '@/styles/variables.scss' as *;
+
+.feedbackItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.feedbackHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.feedbackMeta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.ageTag {
+  font-size: $font-size-xs;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+
+  &.ageChild {
+    background: rgba(22, 93, 255, 0.1);
+    color: $color-primary;
+  }
+
+  &.ageTeen {
+    background: rgba(0, 180, 42, 0.1);
+    color: $color-success;
+  }
+
+  &.ageAdult {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.ageSenior {
+    background: rgba(134, 144, 156, 0.1);
+    color: $color-text-tertiary;
+  }
+}
+
+.feedbackTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.ratingStars {
+  display: flex;
+  gap: 4rpx;
+}
+
+.star {
+  font-size: $font-size-md;
+  color: $color-border;
+
+  &.starActive {
+    color: #ffc300;
+  }
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-md;
+}
+
+.tasteTag {
+  background: $color-tag-taste-bg;
+  color: $color-tag-taste-text;
+  font-size: $font-size-xs;
+  padding: 6rpx 16rpx;
+  border-radius: $radius-xs;
+}
+
+.feedbackFooter {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.intentTag {
+  font-size: $font-size-xs;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+
+  &.intentHigh {
+    background: $color-tag-buy-bg;
+    color: $color-tag-buy-text;
+  }
+
+  &.intentMedium {
+    background: rgba(255, 125, 0, 0.1);
+    color: $color-warning;
+  }
+
+  &.intentLow {
+    background: rgba(134, 144, 156, 0.1);
+    color: $color-text-tertiary;
+  }
+
+  &.intentNone {
+    background: rgba(245, 63, 63, 0.1);
+    color: $color-error;
+  }
+}
+
+.reasonText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  flex: 1;
+  @include text-ellipsis;
+}
+
+.photoCount {
+  margin-top: $spacing-sm;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
