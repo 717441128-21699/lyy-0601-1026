@@ -381,3 +381,155 @@
   font-size: $font-size-sm;
   color: $color-text-tertiary;
 }
+
+.historySection {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.historyTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+
+  &::before {
+    content: '';
+    width: 8rpx;
+    height: 32rpx;
+    background: $color-primary;
+    border-radius: 4rpx;
+  }
+}
+
+.historyScroll {
+  white-space: nowrap;
+  padding-bottom: $spacing-sm;
+}
+
+.historyCard {
+  display: inline-block;
+  width: 280rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-right: $spacing-md;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+  vertical-align: top;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.historyCardSelected {
+    border-color: $color-primary;
+    background: rgba(22, 93, 255, 0.05);
+  }
+}
+
+.historyStore {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.historyProduct {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.historyTime {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: $spacing-sm;
+}
+
+.historyStats {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: $spacing-sm;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  padding: $spacing-md;
+  background: rgba(22, 93, 255, 0.05);
+  border-radius: $radius-md;
+  margin-top: -$spacing-lg;
+  margin-left: -$spacing-lg;
+  margin-right: -$spacing-lg;
+  padding-left: $spacing-lg;
+  padding-right: $spacing-lg;
+}
+
+.historySubtitle {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.backBtn {
+  @include button-reset;
+  padding: $spacing-sm $spacing-md;
+  background: $color-primary;
+  color: $color-text-white;
+  font-size: $font-size-xs;
+  border-radius: $radius-button;
+  height: auto;
+  line-height: 1.4;
+}
+
+.historyActivityInfo {
+  background: $color-bg-page;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.activityInfoTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+}
+
+.activityInfoTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.sampleHint {
+  display: block;
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+  margin-top: $spacing-md;
+}
+
+.sampleBtnDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sampleInputDisabled {
+  background: $color-bg-page;
+  color: $color-text-tertiary;
+}
+
+.abnormalBtnDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

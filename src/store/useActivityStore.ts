@@ -4,13 +4,40 @@ import { Activity, Feedback, AbnormalReport, Product, Store, ReportData, Persist
 import { mockProducts } from '@/data/products'
 import { mockStores } from '@/data/stores'
 import dayjs from 'dayjs'
+import Taro from '@tarojs/taro'
 
 const STORAGE_KEY = 'smart-tasting-activity'
 
+const taroStorage = {
+  getItem: (name: string) => {
+    try {
+      const value = Taro.getStorageSync(name)
+      return value || null
+    } catch (e) {
+      console.error('[Storage] getItem error:', e)
+      return null
+    }
+  },
+  setItem: (name: string, value: string) => {
+    try {
+      Taro.setStorageSync(name, value)
+    } catch (e) {
+      console.error('[Storage] setItem error:', e)
+    }
+  },
+  removeItem: (name: string) => {
+    try {
+      Taro.removeStorageSync(name)
+    } catch (e) {
+      console.error('[Storage] removeItem error:', e)
+    }
+  }
+}
+
 interface ActivityState {
   currentActivity: Activity | null
-  feedbacks: Feedback[]
-  abnormalReports: AbnormalReport[]
+  allFeedbacks: Feedback[]
+  allAbnormalReports: AbnormalReport[]
   activityHistory: Activity[]
   products: Product[]
   stores: Store[]
@@ -27,8 +54,10 @@ interface ActivityState {
   getProductByBarcode: (barcode: string) => Product | undefined
   getProductById: (id: string) => Product | undefined
   searchProducts: (keyword: string) => Product[]
-  getReportData: (storeFilter: string, productFilter: string, periodFilter: string) => ReportData | null
+  getReportData: (storeFilter: string, productFilter: string, periodFilter: string, activityId?: string) => ReportData | null
   getFilteredFeedbacks: (storeFilter: string, productFilter: string, periodFilter: string) => Feedback[]
+  getActivityById: (id: string) => Activity | undefined
+  getActivityAbnormalReports: (activityId: string) => AbnormalReport[]
 }
 
 const isToday = (dateStr: string) => {
@@ -51,38 +80,26 @@ const matchPeriod = (dateStr: string, period: string): boolean => {
   return true
 }
 
-const calculateReportData = (
-  activities: Activity[],
-  feedbacks: Feedback[],
-  storeFilter: string,
-  productFilter: string,
-  periodFilter: string
+const calculateReportDataFromActivities = (
+  activities: Activity[]
 ): ReportData | null => {
-  const filteredActivities = activities.filter(act => {
-    if (storeFilter !== '全部' && act.storeName !== storeFilter) return false
-    if (productFilter !== '全部' && !act.productName.includes(productFilter)) return false
-    if (!matchPeriod(act.startTime, periodFilter)) return false
-    return act.status === 'completed' || act.status === 'ongoing'
-  })
+  if (activities.length === 0) return null
 
-  if (filteredActivities.length === 0) return null
+  const allFeedbacks = activities.flatMap(a => a.feedbacks)
 
-  const activityIds = new Set(filteredActivities.map(a => a.id))
-  const filteredFeedbacks = feedbacks.filter(f => activityIds.has(f.activityId))
-
-  const totalTasters = filteredActivities.reduce((sum, a) => sum + a.usedSamples, 0)
-  const purchaseCount = filteredActivities.reduce((sum, a) => sum + a.purchaseCount, 0)
+  const totalTasters = activities.reduce((sum, a) => sum + a.usedSamples, 0)
+  const purchaseCount = activities.reduce((sum, a) => sum + a.purchaseCount, 0)
   const conversionRate = totalTasters > 0 ? Math.round((purchaseCount / totalTasters) * 1000) / 10 : 0
 
-  const avgTasteRating = filteredFeedbacks.length > 0
-    ? Math.round((filteredFeedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / filteredFeedbacks.length) * 10) / 10
+  const avgTasteRating = allFeedbacks.length > 0
+    ? Math.round((allFeedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / allFeedbacks.length) * 10) / 10
     : 0
 
   const timeMap: Record<string, number> = {}
   const ageMap: Record<string, number> = { '儿童': 0, '青少年': 0, '成年人': 0, '老年人': 0 }
   const tagMap: Record<string, number> = {}
 
-  filteredFeedbacks.forEach(fb => {
+  allFeedbacks.forEach(fb => {
     const hour = dayjs(fb.createdAt).format('HH:00')
     timeMap[hour] = (timeMap[hour] || 0) + 1
 
@@ -97,11 +114,11 @@ const calculateReportData = (
     })
   })
 
-  const hours = Array.from({ length: 10 }, (_, i) => `${String(9 + i).padStart(2, '0')}:00`)
+  const hours = Array.from({ length: 14 }, (_, i) => `${String(8 + i).padStart(2, '0')}:00`)
   const timeDistribution = hours.map(hour => ({
     hour,
     count: timeMap[hour] || 0
-  })).filter(d => d.count > 0 || true)
+  }))
 
   const ageDistribution = Object.entries(ageMap).map(([group, count]) => ({
     group,
@@ -113,16 +130,18 @@ const calculateReportData = (
     .sort((a, b) => b.count - a.count)
     .slice(0, 10)
 
-  const firstActivity = filteredActivities[0]
-  const lastActivity = filteredActivities[filteredActivities.length - 1]
-  const period = `${dayjs(firstActivity.startTime).format('YYYY-MM-DD HH:mm')} - ${dayjs(lastActivity.endTime || lastActivity.startTime).format('YYYY-MM-DD HH:mm')}`
+  const firstActivity = activities[0]
+  const lastActivity = activities[activities.length - 1]
+  const period = activities.length === 1
+    ? `${dayjs(firstActivity.startTime).format('YYYY-MM-DD HH:mm')} - ${dayjs(lastActivity.endTime || lastActivity.startTime).format('YYYY-MM-DD HH:mm')}`
+    : `${dayjs(firstActivity.startTime).format('YYYY-MM-DD')} 至 ${dayjs(lastActivity.endTime || lastActivity.startTime).format('YYYY-MM-DD')} (${activities.length}场)`
 
   return {
-    activityId: filteredActivities.map(a => a.id).join(','),
-    storeId: storeFilter === '全部' ? 'all' : firstActivity.storeId,
-    storeName: storeFilter === '全部' ? '全部门店' : firstActivity.storeName,
-    productId: productFilter === '全部' ? 'all' : firstActivity.productId,
-    productName: productFilter === '全部' ? '全部商品' : firstActivity.productName,
+    activityId: activities.map(a => a.id).join(','),
+    storeId: activities.length === 1 ? firstActivity.storeId : 'all',
+    storeName: activities.length === 1 ? firstActivity.storeName : `共${activities.length}场活动`,
+    productId: activities.length === 1 ? firstActivity.productId : 'all',
+    productName: activities.length === 1 ? firstActivity.productName : `全部商品`,
     period,
     totalTasters,
     purchaseCount,
@@ -138,8 +157,8 @@ export const useActivityStore = create<ActivityState>()(
   persist(
     (set, get) => ({
       currentActivity: null,
-      feedbacks: [],
-      abnormalReports: [],
+      allFeedbacks: [],
+      allAbnormalReports: [],
       activityHistory: [],
       products: mockProducts,
       stores: mockStores,
@@ -164,18 +183,20 @@ export const useActivityStore = create<ActivityState>()(
           productId: currentActivity.productId,
           productName: currentActivity.productName
         }
+
+        const updatedActivity: Activity = {
+          ...currentActivity,
+          totalFeedbacks: currentActivity.totalFeedbacks + 1,
+          purchaseCount: currentActivity.purchaseCount +
+            (feedback.purchaseIntent === 'high' ? 1 : 0),
+          usedSamples: currentActivity.usedSamples + 1,
+          remainingSamples: Math.max(0, currentActivity.remainingSamples - 1),
+          feedbacks: [...currentActivity.feedbacks, newFeedback]
+        }
+
         set((state) => ({
-          feedbacks: [newFeedback, ...state.feedbacks],
-          currentActivity: state.currentActivity
-            ? {
-                ...state.currentActivity,
-                totalFeedbacks: state.currentActivity.totalFeedbacks + 1,
-                purchaseCount: state.currentActivity.purchaseCount +
-                  (feedback.purchaseIntent === 'high' ? 1 : 0),
-                usedSamples: state.currentActivity.usedSamples + 1,
-                remainingSamples: Math.max(0, state.currentActivity.remainingSamples - 1)
-              }
-            : null
+          currentActivity: updatedActivity,
+          allFeedbacks: [newFeedback, ...state.allFeedbacks]
         }))
         console.log('[Feedback] 新增反馈记录:', newFeedback)
       },
@@ -187,15 +208,27 @@ export const useActivityStore = create<ActivityState>()(
           id: `ab${Date.now()}`,
           createdAt: dayjs().format('YYYY-MM-DD HH:mm:ss')
         }
-        set((state) => ({
-          abnormalReports: [newReport, ...state.abnormalReports]
-        }))
+
+        if (currentActivity && currentActivity.status === 'ongoing') {
+          const updatedActivity: Activity = {
+            ...currentActivity,
+            abnormalReports: [...currentActivity.abnormalReports, newReport]
+          }
+          set((state) => ({
+            currentActivity: updatedActivity,
+            allAbnormalReports: [newReport, ...state.allAbnormalReports]
+          }))
+        } else {
+          set((state) => ({
+            allAbnormalReports: [newReport, ...state.allAbnormalReports]
+          }))
+        }
         console.log('[Abnormal] 新增异常报告:', newReport, '活动ID:', currentActivity?.id)
       },
 
       updateSamples: (_used, remaining) => {
         const { currentActivity } = get()
-        if (!currentActivity) return
+        if (!currentActivity || currentActivity.status !== 'ongoing') return
 
         const target = currentActivity.targetSamples
         const validRemaining = Math.max(0, Math.min(remaining, target))
@@ -206,20 +239,18 @@ export const useActivityStore = create<ActivityState>()(
           return
         }
 
-        set((state) => ({
-          currentActivity: state.currentActivity
-            ? {
-                ...state.currentActivity,
-                usedSamples: validUsed,
-                remainingSamples: validRemaining
-              }
-            : null
-        }))
+        const updatedActivity: Activity = {
+          ...currentActivity,
+          usedSamples: validUsed,
+          remainingSamples: validRemaining
+        }
+
+        set({ currentActivity: updatedActivity })
         console.log('[Samples] 更新样品数量:', { used: validUsed, remaining: validRemaining })
       },
 
       startActivity: () => {
-        const { selectedStore, selectedProduct, currentActivity } = get()
+        const { selectedStore, selectedProduct, currentActivity, activityHistory } = get()
         if (!selectedStore || !selectedProduct) {
           console.error('[Activity] 请先选择门店和商品')
           return false
@@ -228,6 +259,7 @@ export const useActivityStore = create<ActivityState>()(
           console.error('[Activity] 已有进行中的活动')
           return false
         }
+
         const newActivity: Activity = {
           id: `act${Date.now()}`,
           storeId: selectedStore.id,
@@ -241,16 +273,24 @@ export const useActivityStore = create<ActivityState>()(
           usedSamples: 0,
           remainingSamples: 50,
           totalFeedbacks: 0,
-          purchaseCount: 0
+          purchaseCount: 0,
+          feedbacks: [],
+          abnormalReports: []
         }
+
+        let updatedHistory = activityHistory
+        if (currentActivity && currentActivity.status === 'completed') {
+          updatedHistory = [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
+        }
+
         set({
           currentActivity: newActivity,
-          feedbacks: [],
-          abnormalReports: [],
+          activityHistory: updatedHistory,
           selectedStore: null,
           selectedProduct: null
         })
         console.log('[Activity] 活动已开始:', newActivity)
+        console.log('[Activity] 历史活动数:', updatedHistory.length)
         return true
       },
 
@@ -265,23 +305,29 @@ export const useActivityStore = create<ActivityState>()(
           status: 'completed',
           endTime: dayjs().format('YYYY-MM-DD HH:mm:ss')
         }
+        const updatedHistory = [endedActivity, ...activityHistory]
         set({
           currentActivity: endedActivity,
-          activityHistory: [endedActivity, ...activityHistory]
+          activityHistory: updatedHistory
         })
-        console.log('[Activity] 活动已结束:', endedActivity)
+        console.log('[Activity] 活动已结束，保存到历史:', endedActivity)
+        console.log('[Activity] 历史活动数:', updatedHistory.length)
         return true
       },
 
       resetActivity: () => {
+        const { currentActivity, activityHistory } = get()
+        let updatedHistory = activityHistory
+        if (currentActivity && currentActivity.status === 'completed') {
+          updatedHistory = [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
+        }
         set({
           currentActivity: null,
           selectedStore: null,
           selectedProduct: null,
-          feedbacks: [],
-          abnormalReports: []
+          activityHistory: updatedHistory
         })
-        console.log('[Activity] 已重置，可开始新活动')
+        console.log('[Activity] 已重置当前活动，历史记录保留:', updatedHistory.length, '场')
       },
 
       getProductByBarcode: (barcode) => {
@@ -303,19 +349,50 @@ export const useActivityStore = create<ActivityState>()(
         )
       },
 
-      getReportData: (storeFilter, productFilter, periodFilter) => {
-        const { activityHistory, currentActivity, feedbacks } = get()
-        const allActivities = currentActivity
-          ? [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
-          : activityHistory
-        return calculateReportData(allActivities, feedbacks, storeFilter, productFilter, periodFilter)
+      getActivityById: (id) => {
+        const { activityHistory, currentActivity } = get()
+        if (currentActivity?.id === id) return currentActivity
+        return activityHistory.find(a => a.id === id)
+      },
+
+      getActivityAbnormalReports: (activityId) => {
+        const activity = get().getActivityById(activityId)
+        return activity?.abnormalReports || []
+      },
+
+      getReportData: (storeFilter, productFilter, periodFilter, activityId) => {
+        const { activityHistory, currentActivity } = get()
+
+        let allActivities: Activity[] = []
+        if (currentActivity) {
+          allActivities = [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
+        } else {
+          allActivities = [...activityHistory]
+        }
+
+        if (activityId) {
+          const activity = allActivities.find(a => a.id === activityId)
+          return activity ? calculateReportDataFromActivities([activity]) : null
+        }
+
+        const filteredActivities = allActivities.filter(act => {
+          if (storeFilter !== '全部' && act.storeName !== storeFilter) return false
+          if (productFilter !== '全部' && !act.productName.includes(productFilter)) return false
+          if (!matchPeriod(act.startTime, periodFilter)) return false
+          return act.status === 'completed' || act.status === 'ongoing'
+        })
+
+        return calculateReportDataFromActivities(filteredActivities)
       },
 
       getFilteredFeedbacks: (storeFilter, productFilter, periodFilter) => {
-        const { activityHistory, currentActivity, feedbacks } = get()
-        const allActivities = currentActivity
-          ? [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
-          : activityHistory
+        const { activityHistory, currentActivity, allFeedbacks } = get()
+        let allActivities: Activity[] = []
+        if (currentActivity) {
+          allActivities = [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
+        } else {
+          allActivities = [...activityHistory]
+        }
 
         const filteredActivities = allActivities.filter(act => {
           if (storeFilter !== '全部' && act.storeName !== storeFilter) return false
@@ -325,16 +402,16 @@ export const useActivityStore = create<ActivityState>()(
         })
 
         const activityIds = new Set(filteredActivities.map(a => a.id))
-        return feedbacks.filter(f => activityIds.has(f.activityId))
+        return allFeedbacks.filter(f => activityIds.has(f.activityId))
       }
     }),
     {
       name: STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => taroStorage),
       partialize: (state): PersistedState => ({
         currentActivity: state.currentActivity,
-        feedbacks: state.feedbacks,
-        abnormalReports: state.abnormalReports,
+        allFeedbacks: state.allFeedbacks,
+        allAbnormalReports: state.allAbnormalReports,
         selectedStoreId: state.selectedStore?.id || null,
         selectedProductId: state.selectedProduct?.id || null,
         activityHistory: state.activityHistory
@@ -349,6 +426,9 @@ export const useActivityStore = create<ActivityState>()(
           state.selectedProduct = persisted.products.find(p => p.id === persisted.selectedProductId) || null
         }
         console.log('[Storage] 数据已从本地恢复')
+        console.log('[Storage] 当前活动:', state.currentActivity?.id)
+        console.log('[Storage] 历史活动数:', state.activityHistory?.length || 0)
+        console.log('[Storage] 总反馈数:', state.allFeedbacks?.length || 0)
       }
     }
   )

@@ -47,12 +47,14 @@ export interface Activity {
   remainingSamples: number
   totalFeedbacks: number
   purchaseCount: number
+  feedbacks: Feedback[]
+  abnormalReports: AbnormalReport[]
 }
 
 export interface PersistedState {
   currentActivity: Activity | null
-  feedbacks: Feedback[]
-  abnormalReports: AbnormalReport[]
+  allFeedbacks: Feedback[]
+  allAbnormalReports: AbnormalReport[]
   selectedStoreId: string | null
   selectedProductId: string | null
   activityHistory: Activity[]

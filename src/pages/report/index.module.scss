@@ -451,3 +451,204 @@
     transform: scale(0.98);
   }
 }
+
+.noTags {
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+  text-align: center;
+  padding: $spacing-xl 0;
+}
+
+.emptyHint {
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+  text-align: center;
+  margin-top: $spacing-md;
+  padding: 0 $spacing-lg;
+}
+
+.listCount {
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-normal;
+  margin-left: $spacing-xs;
+}
+
+.activityListSection {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.activityListScroll {
+  margin-top: $spacing-md;
+  white-space: nowrap;
+}
+
+.activityMiniCard {
+  display: inline-block;
+  width: 280rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-right: $spacing-md;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+  vertical-align: top;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &.activityCardSelected {
+    border-color: $color-primary;
+    background: rgba(22, 93, 255, 0.05);
+  }
+}
+
+.activityMiniStore {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.activityMiniProduct {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: $spacing-xs;
+  @include text-ellipsis;
+}
+
+.activityMiniTime {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: $spacing-sm;
+}
+
+.activityMiniStats {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-sm;
+}
+
+.activityMiniStat {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.selectedIndicator {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+  text-align: center;
+  margin-top: $spacing-sm;
+  padding-top: $spacing-sm;
+  border-top: 1rpx solid rgba(22, 93, 255, 0.2);
+}
+
+.clearSelection {
+  display: block;
+  text-align: center;
+  color: $color-primary;
+  font-size: $font-size-sm;
+  margin-top: $spacing-md;
+  padding: $spacing-sm;
+}
+
+.badgeSingle {
+  background: rgba(0, 180, 42, 0.3);
+}
+
+.badgeMulti {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.reportList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.reportItem {
+  background: $color-bg-page;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+}
+
+.reportHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.reportType {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.typeOutStock {
+  background: rgba(245, 63, 63, 0.1);
+  color: $color-error;
+}
+
+.typePriceError {
+  background: rgba(255, 125, 0, 0.1);
+  color: $color-warning;
+}
+
+.typeCompetitor {
+  background: rgba(134, 144, 156, 0.1);
+  color: $color-text-tertiary;
+}
+
+.reportTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.reportDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.moreReports {
+  text-align: center;
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+  padding-top: $spacing-sm;
+}
+
+.multiActivityInfo {
+  background: $color-bg-page;
+  border-radius: $radius-sm;
+  padding: $spacing-lg;
+}
+
+.multiInfoText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+  line-height: 1.6;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.highlight {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+}
+
+.activitySamples {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}

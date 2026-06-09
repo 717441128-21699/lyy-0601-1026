@@ -6,17 +6,16 @@ import classnames from 'classnames'
 import { useActivityStore } from '@/store/useActivityStore'
 import StatCard from '@/components/StatCard'
 import EmptyState from '@/components/EmptyState'
-import { calculateConversionRate, formatTime } from '@/utils'
+import { calculateConversionRate, formatTime, formatDateTime } from '@/utils'
 import { abnormalTypeLabels } from '@/data/feedbacks'
-import { AbnormalType } from '@/types'
+import { AbnormalType, Activity } from '@/types'
 
 const InventoryPage: React.FC = () => {
   const {
     currentActivity,
-    abnormalReports,
-    feedbacks,
     addAbnormalReport,
-    updateSamples
+    updateSamples,
+    activityHistory
   } = useActivityStore()
 
   const [sampleCount, setSampleCount] = useState(currentActivity?.remainingSamples || 0)
@@ -24,33 +23,40 @@ const InventoryPage: React.FC = () => {
   const [modalType, setModalType] = useState<AbnormalType | ''>('')
   const [reportDesc, setReportDesc] = useState('')
   const [inputValue, setInputValue] = useState('')
+  const [selectedHistoryActivity, setSelectedHistoryActivity] = useState<Activity | null>(null)
 
   useEffect(() => {
     if (currentActivity) {
       setSampleCount(currentActivity.remainingSamples)
       setInputValue(String(currentActivity.remainingSamples))
+    } else {
+      setSampleCount(0)
+      setInputValue('')
     }
   }, [currentActivity?.remainingSamples, currentActivity?.id])
 
+  const displayActivity = selectedHistoryActivity || currentActivity
+
   const stats = useMemo(() => {
-    if (!currentActivity) {
+    if (!displayActivity) {
       return { tasters: 0, buyers: 0, rate: 0, remaining: 0, used: 0, target: 50 }
     }
-    const rate = calculateConversionRate(currentActivity.usedSamples, currentActivity.purchaseCount)
+    const rate = calculateConversionRate(displayActivity.usedSamples, displayActivity.purchaseCount)
     return {
-      tasters: currentActivity.usedSamples,
-      buyers: currentActivity.purchaseCount,
+      tasters: displayActivity.usedSamples,
+      buyers: displayActivity.purchaseCount,
       rate,
-      remaining: currentActivity.remainingSamples,
-      used: currentActivity.usedSamples,
-      target: currentActivity.targetSamples
+      remaining: displayActivity.remainingSamples,
+      used: displayActivity.usedSamples,
+      target: displayActivity.targetSamples
     }
-  }, [currentActivity])
+  }, [displayActivity])
 
   const commonProblems = useMemo(() => {
+    if (!displayActivity) return []
     const problems: Record<string, number> = {}
-    feedbacks
-      .filter(f => f.activityId === currentActivity?.id && f.notPurchaseReason)
+    displayActivity.feedbacks
+      .filter(f => f.notPurchaseReason)
       .forEach(f => {
         const reason = f.notPurchaseReason!
         problems[reason] = (problems[reason] || 0) + 1
@@ -59,15 +65,15 @@ const InventoryPage: React.FC = () => {
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
-  }, [feedbacks, currentActivity])
+  }, [displayActivity])
 
   const progressPercent = useMemo(() => {
-    if (!currentActivity || currentActivity.targetSamples === 0) return 0
-    return Math.min((currentActivity.usedSamples / currentActivity.targetSamples) * 100, 100)
-  }, [currentActivity])
+    if (!displayActivity || displayActivity.targetSamples === 0) return 0
+    return Math.min((displayActivity.usedSamples / displayActivity.targetSamples) * 100, 100)
+  }, [displayActivity])
 
   const validateAndUpdateSamples = (newRemaining: number) => {
-    if (!currentActivity) return
+    if (!currentActivity || currentActivity.status !== 'ongoing') return
 
     const target = currentActivity.targetSamples
     const validRemaining = Math.max(0, Math.min(newRemaining, target))
@@ -87,6 +93,10 @@ const InventoryPage: React.FC = () => {
   const handleSampleChange = (delta: number) => {
     if (!currentActivity || currentActivity.status !== 'ongoing') {
       Taro.showToast({ title: '请先开始活动', icon: 'none' })
+      return
+    }
+    if (selectedHistoryActivity) {
+      Taro.showToast({ title: '历史活动数据不可修改', icon: 'none' })
       return
     }
     const newValue = sampleCount + delta
@@ -128,6 +138,10 @@ const InventoryPage: React.FC = () => {
       Taro.showToast({ title: '请先开始活动', icon: 'none' })
       return
     }
+    if (selectedHistoryActivity) {
+      Taro.showToast({ title: '请切换到当前活动', icon: 'none' })
+      return
+    }
     setModalType(type)
     setReportDesc('')
     setShowModal(true)
@@ -155,10 +169,11 @@ const InventoryPage: React.FC = () => {
   ]
 
   const currentReports = useMemo(() => {
-    return abnormalReports.slice().sort(
+    if (!displayActivity) return []
+    return displayActivity.abnormalReports.slice().sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
-  }, [abnormalReports])
+  }, [displayActivity])
 
   const getTypeClass = (type: string) => {
     switch (type) {
@@ -169,11 +184,66 @@ const InventoryPage: React.FC = () => {
     }
   }
 
-  const isActivityOngoing = currentActivity?.status === 'ongoing'
+  const isActivityOngoing = currentActivity?.status === 'ongoing' && !selectedHistoryActivity
+  const canModify = isActivityOngoing
+
+  const handleSelectHistory = (activity: Activity) => {
+    if (selectedHistoryActivity?.id === activity.id) {
+      setSelectedHistoryActivity(null)
+    } else {
+      setSelectedHistoryActivity(activity)
+    }
+  }
+
+  const handleBackToCurrent = () => {
+    setSelectedHistoryActivity(null)
+  }
 
   return (
     <View className={styles.page}>
       <ScrollView className={styles.content} scrollY>
+        {activityHistory.length > 0 && !selectedHistoryActivity && (
+          <View className={styles.historySection}>
+            <Text className={styles.historyTitle}>📋 历史活动记录</Text>
+            <ScrollView className={styles.historyScroll} scrollX>
+              {activityHistory.map((activity) => (
+                <View
+                  key={activity.id}
+                  className={styles.historyCard}
+                  onClick={() => handleSelectHistory(activity)}
+                >
+                  <Text className={styles.historyStore}>{activity.storeName}</Text>
+                  <Text className={styles.historyProduct}>{activity.productName}</Text>
+                  <Text className={styles.historyTime}>{formatDateTime(activity.startTime)}</Text>
+                  <Text className={styles.historyStats}>
+                    试吃{activity.usedSamples}人 · 购买{activity.purchaseCount}人
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        {selectedHistoryActivity && (
+          <View className={styles.historyHeader}>
+            <Text className={styles.historySubtitle}>
+              查看历史活动：{selectedHistoryActivity.storeName}
+            </Text>
+            <Button className={styles.backBtn} onClick={handleBackToCurrent}>
+              返回当前
+            </Button>
+          </View>
+        )}
+
+        {displayActivity && selectedHistoryActivity && (
+          <View className={styles.historyActivityInfo}>
+            <Text className={styles.activityInfoTitle}>{selectedHistoryActivity.productName}</Text>
+            <Text className={styles.activityInfoTime}>
+              {formatDateTime(selectedHistoryActivity.startTime)} - {formatDateTime(selectedHistoryActivity.endTime!)}
+            </Text>
+          </View>
+        )}
+
         <View className={styles.statsGrid}>
           <StatCard
             title="试吃人数"
@@ -200,56 +270,61 @@ const InventoryPage: React.FC = () => {
 
         <View className={styles.sectionCard}>
           <Text className={styles.sectionTitle}>样品管理</Text>
-          <View className={styles.sampleManager}>
-            <View className={styles.sampleInfo}>
-              <Text className={styles.sampleLabel}>剩余样品数</Text>
-              <View>
-                <Text className={styles.sampleValue}>{sampleCount}</Text>
-                <Text className={styles.sampleUnit}>份</Text>
+          {displayActivity ? (
+            <>
+              <View className={styles.sampleManager}>
+                <View className={styles.sampleInfo}>
+                  <Text className={styles.sampleLabel}>剩余样品数</Text>
+                  <View>
+                    <Text className={styles.sampleValue}>{sampleCount}</Text>
+                    <Text className={styles.sampleUnit}>份</Text>
+                  </View>
+                </View>
+                <View className={styles.sampleControl}>
+                  <Button
+                    className={classnames(styles.sampleBtn, !canModify && styles.sampleBtnDisabled)}
+                    onClick={() => handleSampleChange(-1)}
+                    disabled={!canModify}
+                  >
+                    -
+                  </Button>
+                  <Input
+                    className={classnames(styles.sampleInput, !canModify && styles.sampleInputDisabled)}
+                    type="number"
+                    value={inputValue}
+                    onInput={handleSampleInput}
+                    onBlur={handleSampleBlur}
+                    disabled={!canModify}
+                    placeholder="请输入"
+                  />
+                  <Button
+                    className={classnames(styles.sampleBtn, !canModify && styles.sampleBtnDisabled)}
+                    onClick={() => handleSampleChange(1)}
+                    disabled={!canModify}
+                  >
+                    +
+                  </Button>
+                </View>
               </View>
-            </View>
-            <View className={styles.sampleControl}>
-              <Button
-                className={classnames(styles.sampleBtn, !isActivityOngoing && styles.sampleBtnDisabled)}
-                onClick={() => handleSampleChange(-1)}
-                disabled={!isActivityOngoing}
-              >
-                -
-              </Button>
-              <Input
-                className={classnames(styles.sampleInput, !isActivityOngoing && styles.sampleInputDisabled)}
-                type="number"
-                value={inputValue}
-                onInput={handleSampleInput}
-                onBlur={handleSampleBlur}
-                disabled={!isActivityOngoing}
-                placeholder="请输入"
-              />
-              <Button
-                className={classnames(styles.sampleBtn, !isActivityOngoing && styles.sampleBtnDisabled)}
-                onClick={() => handleSampleChange(1)}
-                disabled={!isActivityOngoing}
-              >
-                +
-              </Button>
-            </View>
-          </View>
 
-          <View className={styles.sampleTarget}>
-            <Text>已使用 {stats.used} 份</Text>
-            <Text>目标 {stats.target} 份</Text>
-          </View>
-          <View className={styles.progressBar}>
-            <View
-              className={styles.progressFill}
-              style={{ width: `${progressPercent}%` }}
-            ></View>
-          </View>
+              <View className={styles.sampleTarget}>
+                <Text>已使用 {stats.used} 份</Text>
+                <Text>目标 {stats.target} 份</Text>
+              </View>
+              <View className={styles.progressBar}>
+                <View
+                  className={styles.progressFill}
+                  style={{ width: `${progressPercent}%` }}
+                ></View>
+              </View>
 
-          {!isActivityOngoing && currentActivity && (
-            <Text className={styles.sampleHint}>活动已结束，无法修改样品数量</Text>
-          )}
-          {!currentActivity && (
+              {!canModify && displayActivity && (
+                <Text className={styles.sampleHint}>
+                  {selectedHistoryActivity ? '历史活动数据仅供查看' : '活动已结束，无法修改样品数量'}
+                </Text>
+              )}
+            </>
+          ) : (
             <Text className={styles.sampleHint}>请先在今日活动页面开始活动</Text>
           )}
         </View>
@@ -260,8 +335,9 @@ const InventoryPage: React.FC = () => {
             {abnormalOptions.map((option) => (
               <Button
                 key={option.type}
-                className={classnames(styles.abnormalBtn, styles[option.class])}
+                className={classnames(styles.abnormalBtn, styles[option.class], !canModify && styles.abnormalBtnDisabled)}
                 onClick={() => handleAbnormalClick(option.type)}
+                disabled={!canModify}
               >
                 <Text className={styles.abnormalIcon}>{option.icon}</Text>
                 <Text className={styles.abnormalLabel}>{option.label}</Text>
@@ -310,7 +386,7 @@ const InventoryPage: React.FC = () => {
             <View className={styles.emptyReport}>
               <EmptyState
                 title="暂无上报记录"
-                description="如发现异常情况，请及时上报"
+                description={displayActivity ? '如发现异常情况，请及时上报' : '请先开始活动'}
                 icon="📋"
               />
             </View>

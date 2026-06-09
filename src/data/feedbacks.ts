@@ -111,7 +111,9 @@ export const mockCurrentActivity: Activity = {
   usedSamples: 28,
   remainingSamples: 22,
   totalFeedbacks: 7,
-  purchaseCount: 4
+  purchaseCount: 4,
+  feedbacks: mockFeedbacks,
+  abnormalReports: []
 }
 
 export const mockAbnormalReports: AbnormalReport[] = [

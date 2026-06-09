@@ -12,7 +12,7 @@ import { tasteTagOptions, notPurchaseReasons } from '@/data/feedbacks'
 import { AgeGroup, PurchaseIntent } from '@/types'
 
 const FeedbackPage: React.FC = () => {
-  const { currentActivity, feedbacks, addFeedback } = useActivityStore()
+  const { currentActivity, addFeedback } = useActivityStore()
 
   const [activeTab, setActiveTab] = useState<'form' | 'list'>('form')
   const [ageGroup, setAgeGroup] = useState<AgeGroup | ''>('')
@@ -49,13 +49,14 @@ const FeedbackPage: React.FC = () => {
   }, [currentActivity, ageGroup, tasteRating, purchaseIntent, notPurchaseReason])
 
   const stats = useMemo(() => {
-    const todayFeedbacks = feedbacks.filter(f => f.activityId === currentActivity?.id)
-    const highIntent = todayFeedbacks.filter(f => f.purchaseIntent === 'high').length
-    const avgRating = todayFeedbacks.length > 0
-      ? (todayFeedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / todayFeedbacks.length).toFixed(1)
+    if (!currentActivity) return { total: 0, highIntent: 0, avgRating: '0' }
+    const activityFeedbacks = currentActivity.feedbacks
+    const highIntent = activityFeedbacks.filter(f => f.purchaseIntent === 'high').length
+    const avgRating = activityFeedbacks.length > 0
+      ? (activityFeedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / activityFeedbacks.length).toFixed(1)
       : '0'
-    return { total: todayFeedbacks.length, highIntent, avgRating }
-  }, [feedbacks, currentActivity])
+    return { total: activityFeedbacks.length, highIntent, avgRating }
+  }, [currentActivity])
 
   const handleTagToggle = (tag: string) => {
     setTasteTags(prev =>
@@ -145,8 +146,8 @@ const FeedbackPage: React.FC = () => {
   }
 
   const currentFeedbacks = useMemo(() => {
-    return feedbacks.filter(f => f.activityId === currentActivity?.id)
-  }, [feedbacks, currentActivity])
+    return currentActivity?.feedbacks || []
+  }, [currentActivity])
 
   return (
     <View className={styles.page}>
@@ -291,7 +292,7 @@ const FeedbackPage: React.FC = () => {
           </View>
 
           <View className={styles.listHeader}>
-            <Text className={styles.listTitle}>反馈记录</Text>
+            <Text className={styles.listTitle}>本场活动反馈</Text>
             <Text className={styles.listCount}>共 {currentFeedbacks.length} 条</Text>
           </View>
 
@@ -305,7 +306,7 @@ const FeedbackPage: React.FC = () => {
             <View className={styles.emptyFeedback}>
               <EmptyState
                 title="暂无反馈记录"
-                description="活动进行中，快去录入顾客反馈吧"
+                description={currentActivity?.status === 'ongoing' ? '活动进行中，快去录入顾客反馈吧' : '请先开始活动'}
                 icon="📝"
               />
             </View>

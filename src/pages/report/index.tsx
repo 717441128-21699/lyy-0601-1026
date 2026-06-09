@@ -3,9 +3,11 @@ import { View, Text, Button, ScrollView, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import styles from './index.module.scss'
 import classnames from 'classnames'
-import { ReportData } from '@/types'
+import { ReportData, Activity } from '@/types'
 import EmptyState from '@/components/EmptyState'
 import { useActivityStore } from '@/store/useActivityStore'
+import { formatDateTime, formatTime } from '@/utils'
+import { abnormalTypeLabels } from '@/data/feedbacks'
 
 const ReportPage: React.FC = () => {
   const [selectedStore, setSelectedStore] = useState('全部')
@@ -13,12 +15,49 @@ const ReportPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('今日')
   const [showFilterModal, setShowFilterModal] = useState<string | null>(null)
   const [tempFilterValue, setTempFilterValue] = useState('')
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
 
-  const { getReportData, activityHistory, currentActivity } = useActivityStore()
+  const { getReportData, activityHistory, currentActivity, getActivityAbnormalReports, getActivityById } = useActivityStore()
+
+  const filteredActivities = useMemo(() => {
+    let allActivities: Activity[] = []
+    if (currentActivity && currentActivity.status !== 'pending') {
+      allActivities = [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
+    } else {
+      allActivities = [...activityHistory]
+    }
+
+    return allActivities.filter(act => {
+      if (selectedStore !== '全部' && act.storeName !== selectedStore) return false
+      if (selectedProduct !== '全部' && !act.productName.includes(selectedProduct)) return false
+
+      const dateStr = act.startTime
+      if (selectedPeriod === '今日') {
+        const today = new Date().toDateString()
+        return new Date(dateStr).toDateString() === today
+      }
+      if (selectedPeriod === '本周') {
+        const now = new Date()
+        const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
+        return new Date(dateStr) >= weekStart
+      }
+      if (selectedPeriod === '本月') {
+        const now = new Date()
+        return new Date(dateStr).getMonth() === now.getMonth() &&
+          new Date(dateStr).getFullYear() === now.getFullYear()
+      }
+      return true
+    })
+  }, [selectedStore, selectedProduct, selectedPeriod, activityHistory, currentActivity])
 
   const reportData: ReportData | null = useMemo(() => {
-    return getReportData(selectedStore, selectedProduct, selectedPeriod)
-  }, [selectedStore, selectedProduct, selectedPeriod, getReportData, activityHistory, currentActivity])
+    return getReportData(selectedStore, selectedProduct, selectedPeriod, selectedActivityId || undefined)
+  }, [selectedStore, selectedProduct, selectedPeriod, selectedActivityId, getReportData])
+
+  const selectedActivity = useMemo(() => {
+    if (!selectedActivityId) return null
+    return getActivityById(selectedActivityId)
+  }, [selectedActivityId, getActivityById])
 
   const maxTimeCount = useMemo(() => {
     if (!reportData) return 1
@@ -49,10 +88,36 @@ const ReportPage: React.FC = () => {
 
   const periodOptions = ['今日', '本周', '本月', '全部']
 
+  const abnormalReports = useMemo(() => {
+    if (selectedActivityId) {
+      return getActivityAbnormalReports(selectedActivityId)
+    }
+    if (reportData) {
+      const activityIds = reportData.activityId.split(',')
+      const reports: any[] = []
+      activityIds.forEach(id => {
+        reports.push(...getActivityAbnormalReports(id))
+      })
+      return reports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    }
+    return []
+  }, [selectedActivityId, reportData, getActivityAbnormalReports])
+
+  const getTypeClass = (type: string) => {
+    switch (type) {
+      case 'out_of_stock': return 'typeOutStock'
+      case 'price_error': return 'typePriceError'
+      case 'competitor': return 'typeCompetitor'
+      default: return ''
+    }
+  }
+
   useEffect(() => {
     console.log('[Report] 筛选条件:', { store: selectedStore, product: selectedProduct, period: selectedPeriod })
+    console.log('[Report] 筛选后活动数:', filteredActivities.length)
+    console.log('[Report] 选中活动:', selectedActivityId)
     console.log('[Report] 复盘数据:', reportData)
-  }, [selectedStore, selectedProduct, selectedPeriod, reportData])
+  }, [selectedStore, selectedProduct, selectedPeriod, filteredActivities, selectedActivityId, reportData])
 
   const handleFilterClick = (type: string, currentValue: string) => {
     setTempFilterValue(currentValue)
@@ -71,6 +136,7 @@ const ReportPage: React.FC = () => {
     } else if (showFilterModal === 'period') {
       setSelectedPeriod(tempFilterValue)
     }
+    setSelectedActivityId(null)
     setShowFilterModal(null)
   }
 
@@ -117,6 +183,14 @@ const ReportPage: React.FC = () => {
     })
   }
 
+  const handleSelectActivity = (activityId: string) => {
+    if (selectedActivityId === activityId) {
+      setSelectedActivityId(null)
+    } else {
+      setSelectedActivityId(activityId)
+    }
+  }
+
   const hasData = reportData && reportData.totalTasters > 0
 
   return (
@@ -146,15 +220,62 @@ const ReportPage: React.FC = () => {
       </View>
 
       <ScrollView className={styles.content} scrollY>
+        {filteredActivities.length > 0 && (
+          <View className={styles.activityListSection}>
+            <Text className={styles.sectionTitle}>
+              📋 活动列表
+              <Text className={styles.listCount}>({filteredActivities.length}场)</Text>
+            </Text>
+            <ScrollView className={styles.activityListScroll} scrollX>
+              {filteredActivities.map((activity) => (
+                <View
+                  key={activity.id}
+                  className={classnames(styles.activityMiniCard, selectedActivityId === activity.id && styles.activityCardSelected)}
+                  onClick={() => handleSelectActivity(activity.id)}
+                >
+                  <Text className={styles.activityMiniStore}>{activity.storeName}</Text>
+                  <Text className={styles.activityMiniProduct}>{activity.productName}</Text>
+                  <Text className={styles.activityMiniTime}>
+                    {formatDateTime(activity.startTime)}
+                  </Text>
+                  <View className={styles.activityMiniStats}>
+                    <Text className={styles.activityMiniStat}>
+                      试吃 {activity.usedSamples}
+                    </Text>
+                    <Text className={styles.activityMiniStat}>
+                      购买 {activity.purchaseCount}
+                    </Text>
+                  </View>
+                  {selectedActivityId === activity.id && (
+                    <View className={styles.selectedIndicator}>✓ 已选中</View>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+            {selectedActivityId && (
+              <Text className={styles.clearSelection} onClick={() => setSelectedActivityId(null)}>
+                清除选中，查看汇总
+              </Text>
+            )}
+          </View>
+        )}
+
         {hasData ? (
           <>
             <View className={styles.overviewCard}>
               <View className={styles.overviewHeader}>
                 <View>
-                  <Text className={styles.overviewTitle}>活动复盘报告</Text>
+                  <Text className={styles.overviewTitle}>
+                    {selectedActivity ? '单场活动复盘' : '活动汇总报告'}
+                  </Text>
                   <Text className={styles.overviewPeriod}>{reportData!.period}</Text>
                 </View>
-                <View className={styles.overviewBadge}>已完成</View>
+                <View className={classnames(
+                  styles.overviewBadge,
+                  selectedActivity ? styles.badgeSingle : styles.badgeMulti
+                )}>
+                  {selectedActivity ? '单场数据' : `${filteredActivities.length}场汇总`}
+                </View>
               </View>
               <View className={styles.overviewStats}>
                 <View className={styles.overviewStat}>
@@ -256,22 +377,68 @@ const ReportPage: React.FC = () => {
               </View>
             </View>
 
+            {abnormalReports.length > 0 && (
+              <View className={styles.sectionCard}>
+                <View className={styles.sectionHeader}>
+                  <Text className={styles.sectionTitle}>⚠️ 异常上报记录</Text>
+                  <Text className={styles.sectionMore}>共 {abnormalReports.length} 条</Text>
+                </View>
+                <View className={styles.reportList}>
+                  {abnormalReports.slice(0, 5).map((report) => (
+                    <View key={report.id} className={styles.reportItem}>
+                      <View className={styles.reportHeader}>
+                        <View
+                          className={classnames(styles.reportType, styles[getTypeClass(report.type)])}
+                        >
+                          {abnormalTypeLabels[report.type]}
+                        </View>
+                        <Text className={styles.reportTime}>{formatTime(report.createdAt)}</Text>
+                      </View>
+                      <Text className={styles.reportDesc}>{report.description}</Text>
+                    </View>
+                  ))}
+                  {abnormalReports.length > 5 && (
+                    <Text className={styles.moreReports}>还有 {abnormalReports.length - 5} 条记录</Text>
+                  )}
+                </View>
+              </View>
+            )}
+
             <View className={styles.sectionCard}>
               <View className={styles.sectionHeader}>
                 <Text className={styles.sectionTitle}>📋 活动信息</Text>
               </View>
-              <View className={styles.activityInfo}>
-                <Image
-                  className={styles.activityImage}
-                  src={currentActivity?.productImage || activityHistory[0]?.productImage || 'https://picsum.photos/id/292/300/300'}
-                  mode="aspectFill"
-                />
-                <View className={styles.activityDetail}>
-                  <Text className={styles.activityName}>{reportData!.productName}</Text>
-                  <Text className={styles.activityStore}>📍 {reportData!.storeName}</Text>
-                  <Text className={styles.activityTime}>活动时段：{reportData!.period}</Text>
+              {selectedActivity ? (
+                <View className={styles.activityInfo}>
+                  <Image
+                    className={styles.activityImage}
+                    src={selectedActivity.productImage}
+                    mode="aspectFill"
+                  />
+                  <View className={styles.activityDetail}>
+                    <Text className={styles.activityName}>{selectedActivity.productName}</Text>
+                    <Text className={styles.activityStore}>📍 {selectedActivity.storeName}</Text>
+                    <Text className={styles.activityTime}>
+                      活动时间：{formatDateTime(selectedActivity.startTime)} - {formatDateTime(selectedActivity.endTime || selectedActivity.startTime)}
+                    </Text>
+                    <Text className={styles.activitySamples}>
+                      样品使用：{selectedActivity.usedSamples}/{selectedActivity.targetSamples} 份
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              ) : (
+                <View className={styles.multiActivityInfo}>
+                  <Text className={styles.multiInfoText}>
+                    本次汇总包含 <Text className={styles.highlight}>{filteredActivities.length}</Text> 场活动
+                  </Text>
+                  <Text className={styles.multiInfoText}>
+                    覆盖 <Text className={styles.highlight}>{new Set(filteredActivities.map(a => a.storeName)).size}</Text> 家门店
+                  </Text>
+                  <Text className={styles.multiInfoText}>
+                    共 <Text className={styles.highlight}>{reportData!.totalTasters}</Text> 人参与试吃
+                  </Text>
+                </View>
+              )}
             </View>
 
             <Button className={styles.exportBtn} onClick={handleExport}>
