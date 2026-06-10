@@ -58,6 +58,7 @@ interface ActivityState {
   getFilteredFeedbacks: (storeFilter: string, productFilter: string, periodFilter: string) => Feedback[]
   getActivityById: (id: string) => Activity | undefined
   getActivityAbnormalReports: (activityId: string) => AbnormalReport[]
+  clearAllData: () => void
 }
 
 const isToday = (dateStr: string) => {
@@ -328,6 +329,19 @@ export const useActivityStore = create<ActivityState>()(
           activityHistory: updatedHistory
         })
         console.log('[Activity] 已重置当前活动，历史记录保留:', updatedHistory.length, '场')
+      },
+
+      clearAllData: () => {
+        Taro.removeStorageSync(STORAGE_KEY)
+        set({
+          currentActivity: null,
+          allFeedbacks: [],
+          allAbnormalReports: [],
+          activityHistory: [],
+          selectedStore: null,
+          selectedProduct: null
+        })
+        console.log('[Activity] 所有数据已清除')
       },
 
       getProductByBarcode: (barcode) => {

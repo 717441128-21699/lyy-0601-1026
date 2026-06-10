@@ -219,3 +219,29 @@
   color: $color-text-tertiary;
   margin-top: 4rpx;
 }
+
+.debugSection {
+  margin-top: $spacing-lg;
+  padding: $spacing-md;
+  background: rgba(22, 93, 255, 0.05);
+  border: 1rpx dashed $color-primary;
+  border-radius: $radius-md;
+}
+
+.debugTitle {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+  display: block;
+}
+
+.debugButton {
+  @include button-reset;
+  width: 100%;
+  height: 80rpx;
+  line-height: 80rpx;
+  background: $color-error;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  border-radius: $radius-button;
+}

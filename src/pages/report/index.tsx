@@ -3,11 +3,14 @@ import { View, Text, Button, ScrollView, Image } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import styles from './index.module.scss'
 import classnames from 'classnames'
-import { ReportData, Activity } from '@/types'
+import { ReportData, Activity, Feedback } from '@/types'
 import EmptyState from '@/components/EmptyState'
 import { useActivityStore } from '@/store/useActivityStore'
-import { formatDateTime, formatTime } from '@/utils'
+import { formatDateTime, formatTime, formatDate } from '@/utils'
 import { abnormalTypeLabels } from '@/data/feedbacks'
+import dayjs from 'dayjs'
+
+type ViewMode = 'timeline' | 'list' | 'compare'
 
 const ReportPage: React.FC = () => {
   const [selectedStore, setSelectedStore] = useState('全部')
@@ -15,9 +18,11 @@ const ReportPage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('今日')
   const [showFilterModal, setShowFilterModal] = useState<string | null>(null)
   const [tempFilterValue, setTempFilterValue] = useState('')
-  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('timeline')
+  const [expandedActivityId, setExpandedActivityId] = useState<string | null>(null)
+  const [compareActivityIds, setCompareActivityIds] = useState<string[]>([])
 
-  const { getReportData, activityHistory, currentActivity, getActivityAbnormalReports, getActivityById } = useActivityStore()
+  const { getReportData, activityHistory, currentActivity, getActivityById } = useActivityStore()
 
   const filteredActivities = useMemo(() => {
     let allActivities: Activity[] = []
@@ -47,32 +52,42 @@ const ReportPage: React.FC = () => {
           new Date(dateStr).getFullYear() === now.getFullYear()
       }
       return true
-    })
+    }).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())
   }, [selectedStore, selectedProduct, selectedPeriod, activityHistory, currentActivity])
 
+  const activitiesByDate = useMemo(() => {
+    const groups: Record<string, Activity[]> = {}
+    filteredActivities.forEach(act => {
+      const date = formatDate(act.startTime)
+      if (!groups[date]) groups[date] = []
+      groups[date].push(act)
+    })
+    return Object.entries(groups).sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+  }, [filteredActivities])
+
   const reportData: ReportData | null = useMemo(() => {
-    return getReportData(selectedStore, selectedProduct, selectedPeriod, selectedActivityId || undefined)
-  }, [selectedStore, selectedProduct, selectedPeriod, selectedActivityId, getReportData])
+    return getReportData(selectedStore, selectedProduct, selectedPeriod)
+  }, [selectedStore, selectedProduct, selectedPeriod, getReportData])
 
-  const selectedActivity = useMemo(() => {
-    if (!selectedActivityId) return null
-    return getActivityById(selectedActivityId)
-  }, [selectedActivityId, getActivityById])
+  const compareReportData1 = useMemo(() => {
+    if (compareActivityIds.length < 1) return null
+    return getReportData(selectedStore, selectedProduct, selectedPeriod, compareActivityIds[0])
+  }, [compareActivityIds, selectedStore, selectedProduct, selectedPeriod, getReportData])
 
-  const maxTimeCount = useMemo(() => {
-    if (!reportData) return 1
-    return Math.max(...reportData.timeDistribution.map(d => d.count), 1)
-  }, [reportData])
+  const compareReportData2 = useMemo(() => {
+    if (compareActivityIds.length < 2) return null
+    return getReportData(selectedStore, selectedProduct, selectedPeriod, compareActivityIds[1])
+  }, [compareActivityIds, selectedStore, selectedProduct, selectedPeriod, getReportData])
 
-  const maxAgeCount = useMemo(() => {
-    if (!reportData) return 1
-    return Math.max(...reportData.ageDistribution.map(d => d.count), 1)
-  }, [reportData])
+  const compareActivity1 = useMemo(() => {
+    if (compareActivityIds.length < 1) return null
+    return getActivityById(compareActivityIds[0])
+  }, [compareActivityIds, getActivityById])
 
-  const maxTagCount = useMemo(() => {
-    if (!reportData) return 1
-    return Math.max(...reportData.topTasteTags.map(d => d.count), 1)
-  }, [reportData])
+  const compareActivity2 = useMemo(() => {
+    if (compareActivityIds.length < 2) return null
+    return getActivityById(compareActivityIds[1])
+  }, [compareActivityIds, getActivityById])
 
   const storeOptions = useMemo(() => {
     const storeNames = new Set(activityHistory.map(a => a.storeName))
@@ -88,21 +103,6 @@ const ReportPage: React.FC = () => {
 
   const periodOptions = ['今日', '本周', '本月', '全部']
 
-  const abnormalReports = useMemo(() => {
-    if (selectedActivityId) {
-      return getActivityAbnormalReports(selectedActivityId)
-    }
-    if (reportData) {
-      const activityIds = reportData.activityId.split(',')
-      const reports: any[] = []
-      activityIds.forEach(id => {
-        reports.push(...getActivityAbnormalReports(id))
-      })
-      return reports.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    }
-    return []
-  }, [selectedActivityId, reportData, getActivityAbnormalReports])
-
   const getTypeClass = (type: string) => {
     switch (type) {
       case 'out_of_stock': return 'typeOutStock'
@@ -115,9 +115,8 @@ const ReportPage: React.FC = () => {
   useEffect(() => {
     console.log('[Report] 筛选条件:', { store: selectedStore, product: selectedProduct, period: selectedPeriod })
     console.log('[Report] 筛选后活动数:', filteredActivities.length)
-    console.log('[Report] 选中活动:', selectedActivityId)
-    console.log('[Report] 复盘数据:', reportData)
-  }, [selectedStore, selectedProduct, selectedPeriod, filteredActivities, selectedActivityId, reportData])
+    console.log('[Report] 对比活动:', compareActivityIds)
+  }, [selectedStore, selectedProduct, selectedPeriod, filteredActivities, compareActivityIds])
 
   const handleFilterClick = (type: string, currentValue: string) => {
     setTempFilterValue(currentValue)
@@ -136,7 +135,8 @@ const ReportPage: React.FC = () => {
     } else if (showFilterModal === 'period') {
       setSelectedPeriod(tempFilterValue)
     }
-    setSelectedActivityId(null)
+    setCompareActivityIds([])
+    setExpandedActivityId(null)
     setShowFilterModal(null)
   }
 
@@ -147,17 +147,36 @@ const ReportPage: React.FC = () => {
     return []
   }
 
-  const getAgeRingClass = (index: number) => {
-    const classes = ['ageRingChild', 'ageRingTeen', 'ageRingAdult', 'ageRingSenior']
-    return classes[index] || 'ageRingChild'
+  const handleExpandActivity = (activityId: string) => {
+    if (expandedActivityId === activityId) {
+      setExpandedActivityId(null)
+    } else {
+      setExpandedActivityId(activityId)
+    }
   }
 
-  const getTagFontSize = (count: number) => {
-    const ratio = count / maxTagCount
-    if (ratio > 0.8) return '32rpx'
-    if (ratio > 0.5) return '28rpx'
-    if (ratio > 0.2) return '26rpx'
-    return '24rpx'
+  const handleToggleCompare = (activityId: string) => {
+    setCompareActivityIds(prev => {
+      if (prev.includes(activityId)) {
+        return prev.filter(id => id !== activityId)
+      }
+      if (prev.length >= 2) {
+        return [prev[1], activityId]
+      }
+      return [...prev, activityId]
+    })
+  }
+
+  const handleClearCompare = () => {
+    setCompareActivityIds([])
+  }
+
+  const handleStartCompare = () => {
+    if (compareActivityIds.length === 2) {
+      setViewMode('compare')
+    } else {
+      Taro.showToast({ title: '请选择两场活动', icon: 'none' })
+    }
   }
 
   const handleExport = () => {
@@ -183,15 +202,354 @@ const ReportPage: React.FC = () => {
     })
   }
 
-  const handleSelectActivity = (activityId: string) => {
-    if (selectedActivityId === activityId) {
-      setSelectedActivityId(null)
-    } else {
-      setSelectedActivityId(activityId)
-    }
+  const getDifferenceIndicator = (val1: number, val2: number) => {
+    const diff = val1 - val2
+    if (diff > 0) return <Text className={styles.diffPositive}>↑ {diff.toFixed(1)}</Text>
+    if (diff < 0) return <Text className={styles.diffNegative}>↓ {Math.abs(diff).toFixed(1)}</Text>
+    return <Text className={styles.diffEqual}>— 持平</Text>
   }
 
-  const hasData = reportData && reportData.totalTasters > 0
+  const renderTimelineView = () => (
+    <View className={styles.timelineSection}>
+      {activitiesByDate.map(([date, activities]) => (
+        <View key={date} className={styles.timelineDateGroup}>
+          <View className={styles.timelineDateHeader}>
+            <View className={styles.timelineDateDot}></View>
+            <Text className={styles.timelineDateText}>{date}</Text>
+            <Text className={styles.timelineDateCount}>{activities.length}场</Text>
+          </View>
+          <View className={styles.timelineList}>
+            {activities.map((activity) => (
+              <View key={activity.id} className={styles.timelineItem}>
+                <View className={styles.timelineItemLine}></View>
+                <View
+                  className={classnames(
+                    styles.timelineItemCard,
+                    expandedActivityId === activity.id && styles.timelineCardExpanded
+                  )}
+                  onClick={() => handleExpandActivity(activity.id)}
+                >
+                  <View className={styles.timelineItemHeader}>
+                    <View className={styles.timelineItemTime}>
+                      {dayjs(activity.startTime).format('HH:mm')}
+                    </View>
+                    <View className={styles.timelineItemInfo}>
+                      <Text className={styles.timelineItemStore}>{activity.storeName}</Text>
+                      <Text className={styles.timelineItemProduct}>{activity.productName}</Text>
+                    </View>
+                    <View className={styles.timelineItemStats}>
+                      <Text className={styles.timelineItemStat}>
+                        试吃 {activity.usedSamples}
+                      </Text>
+                      <Text className={styles.timelineItemStat}>
+                        购买 {activity.purchaseCount}
+                      </Text>
+                    </View>
+                    {viewMode === 'list' && (
+                      <View
+                        className={classnames(
+                          styles.compareCheckbox,
+                          compareActivityIds.includes(activity.id) && styles.compareChecked
+                        )}
+                        onClick={(e) => { e.stopPropagation(); handleToggleCompare(activity.id) }}
+                      >
+                        {compareActivityIds.includes(activity.id) && '✓'}
+                      </View>
+                    )}
+                    <Text className={styles.timelineItemArrow}>
+                      {expandedActivityId === activity.id ? '▲' : '▼'}
+                    </Text>
+                  </View>
+
+                  {expandedActivityId === activity.id && (
+                    <View className={styles.timelineItemDetail}>
+                      <View className={styles.detailSection}>
+                        <Text className={styles.detailTitle}>📊 基础数据</Text>
+                        <View className={styles.detailStats}>
+                          <View className={styles.detailStat}>
+                            <Text className={styles.detailStatValue}>{activity.usedSamples}</Text>
+                            <Text className={styles.detailStatLabel}>试吃人数</Text>
+                          </View>
+                          <View className={styles.detailStat}>
+                            <Text className={styles.detailStatValue}>{activity.purchaseCount}</Text>
+                            <Text className={styles.detailStatLabel}>购买人数</Text>
+                          </View>
+                          <View className={styles.detailStat}>
+                            <Text className={styles.detailStatValue}>
+                              {activity.usedSamples > 0 ? ((activity.purchaseCount / activity.usedSamples) * 100).toFixed(1) : 0}%
+                            </Text>
+                            <Text className={styles.detailStatLabel}>转化率</Text>
+                          </View>
+                          <View className={styles.detailStat}>
+                            <Text className={styles.detailStatValue}>
+                              {activity.feedbacks.length > 0
+                                ? (activity.feedbacks.reduce((s: number, f: Feedback) => s + f.tasteRating, 0) / activity.feedbacks.length).toFixed(1)
+                                : '—'}
+                            </Text>
+                            <Text className={styles.detailStatLabel}>平均评分</Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      {activity.feedbacks.length > 0 && (
+                        <View className={styles.detailSection}>
+                          <Text className={styles.detailTitle}>📝 反馈明细</Text>
+                          <View className={styles.feedbackList}>
+                            {activity.feedbacks.slice(0, 5).map((fb: Feedback) => (
+                              <View key={fb.id} className={styles.feedbackMiniItem}>
+                                <Text className={styles.feedbackTime}>{formatTime(fb.createdAt)}</Text>
+                                <Text className={styles.feedbackAge}>
+                                  {fb.ageGroup === 'child' ? '儿童' :
+                                   fb.ageGroup === 'teen' ? '青少年' :
+                                   fb.ageGroup === 'adult' ? '成年人' : '老年人'}
+                                </Text>
+                                <View className={styles.feedbackStars}>
+                                  {Array.from({ length: 5 }).map((_, i) => (
+                                    <Text
+                                      key={i}
+                                      className={classnames(
+                                        styles.starIcon,
+                                        i < fb.tasteRating && styles.starFilled
+                                      )}
+                                    >★</Text>
+                                  ))}
+                                </View>
+                                <Text className={styles.feedbackIntent}>
+                                  {fb.purchaseIntent === 'high' ? '👍 强购' :
+                                   fb.purchaseIntent === 'medium' ? '🤔 考虑' :
+                                   fb.purchaseIntent === 'low' ? '😐 犹豫' : '👎 不购'}
+                                </Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+
+                      {activity.abnormalReports.length > 0 && (
+                        <View className={styles.detailSection}>
+                          <Text className={styles.detailTitle}>⚠️ 异常记录</Text>
+                          <View className={styles.abnormalMiniList}>
+                            {activity.abnormalReports.map(ab => (
+                              <View key={ab.id} className={styles.abnormalMiniItem}>
+                                <View className={classnames(styles.abnormalMiniType, styles[getTypeClass(ab.type)])}>
+                                  {abnormalTypeLabels[ab.type]}
+                                </View>
+                                <Text className={styles.abnormalMiniDesc}>{ab.description}</Text>
+                              </View>
+                            ))}
+                          </View>
+                        </View>
+                      )}
+
+                      <View className={styles.detailSection}>
+                        <Text className={styles.detailTitle}>🎁 样品消耗</Text>
+                        <View className={styles.sampleDetail}>
+                          <View className={styles.sampleBar}>
+                            <View
+                              className={styles.sampleBarUsed}
+                              style={{ width: `${Math.min(100, (activity.usedSamples / activity.targetSamples) * 100)}%` }}
+                            ></View>
+                          </View>
+                          <View className={styles.sampleDetailStats}>
+                            <Text>已用 {activity.usedSamples}/{activity.targetSamples} 份</Text>
+                            <Text>剩余 {activity.remainingSamples} 份</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
+    </View>
+  )
+
+  const renderCompareView = () => {
+    if (!compareActivity1 || !compareActivity2 || !compareReportData1 || !compareReportData2) {
+      return (
+        <View className={styles.emptyCompare}>
+          <EmptyState
+            title="请选择两场活动进行对比"
+            description="切换到列表视图，选择两场活动后点击对比按钮"
+            icon="⚖️"
+          />
+          <Button className={styles.switchToListBtn} onClick={() => setViewMode('list')}>
+            去选择活动
+          </Button>
+        </View>
+      )
+    }
+
+    const r1 = compareReportData1
+    const r2 = compareReportData2
+    const maxCompareTag = Math.max(
+      ...r1.topTasteTags.map(t => t.count),
+      ...r2.topTasteTags.map(t => t.count),
+      1
+    )
+
+    return (
+      <View className={styles.compareSection}>
+        <View className={styles.compareHeader}>
+          <Button className={styles.backToListBtn} onClick={() => setViewMode('list')}>
+            ← 返回列表
+          </Button>
+          <Text className={styles.compareTitle}>活动对比分析</Text>
+          <Button className={styles.clearCompareBtn} onClick={handleClearCompare}>
+            清除选择
+          </Button>
+        </View>
+
+        <View className={styles.compareGrid}>
+          <View className={styles.compareHeaderRow}>
+            <View className={styles.compareHeaderCell}></View>
+            <View className={styles.compareActivityHeader}>
+              <Image className={styles.compareActivityImage} src={compareActivity1.productImage} mode="aspectFill" />
+              <Text className={styles.compareActivityName}>{compareActivity1.productName}</Text>
+              <Text className={styles.compareActivityStore}>{compareActivity1.storeName}</Text>
+            </View>
+            <View className={styles.compareActivityHeader}>
+              <Image className={styles.compareActivityImage} src={compareActivity2.productImage} mode="aspectFill" />
+              <Text className={styles.compareActivityName}>{compareActivity2.productName}</Text>
+              <Text className={styles.compareActivityStore}>{compareActivity2.storeName}</Text>
+            </View>
+          </View>
+
+          <View className={styles.compareRow}>
+            <Text className={styles.compareLabel}>试吃人数</Text>
+            <View className={styles.compareValue}>
+              <Text className={styles.compareNumber}>{r1.totalTasters}</Text>
+              {getDifferenceIndicator(r1.totalTasters, r2.totalTasters)}
+            </View>
+            <View className={styles.compareValue}>
+              <Text className={styles.compareNumber}>{r2.totalTasters}</Text>
+            </View>
+          </View>
+
+          <View className={styles.compareRow}>
+            <Text className={styles.compareLabel}>购买人数</Text>
+            <View className={styles.compareValue}>
+              <Text className={styles.compareNumber}>{r1.purchaseCount}</Text>
+              {getDifferenceIndicator(r1.purchaseCount, r2.purchaseCount)}
+            </View>
+            <View className={styles.compareValue}>
+              <Text className={styles.compareNumber}>{r2.purchaseCount}</Text>
+            </View>
+          </View>
+
+          <View className={styles.compareRow}>
+            <Text className={styles.compareLabel}>转化率</Text>
+            <View className={styles.compareValue}>
+              <Text className={classnames(
+                styles.compareNumber,
+                r1.conversionRate >= 50 ? styles.valueSuccess :
+                r1.conversionRate >= 30 ? styles.valueWarning : styles.valueError
+              )}>{r1.conversionRate}%</Text>
+              {getDifferenceIndicator(r1.conversionRate, r2.conversionRate)}
+            </View>
+            <View className={styles.compareValue}>
+              <Text className={classnames(
+                styles.compareNumber,
+                r2.conversionRate >= 50 ? styles.valueSuccess :
+                r2.conversionRate >= 30 ? styles.valueWarning : styles.valueError
+              )}>{r2.conversionRate}%</Text>
+            </View>
+          </View>
+
+          <View className={styles.compareRow}>
+            <Text className={styles.compareLabel}>平均评分</Text>
+            <View className={styles.compareValue}>
+              <Text className={styles.compareNumber}>⭐ {r1.avgTasteRating}</Text>
+              {getDifferenceIndicator(r1.avgTasteRating, r2.avgTasteRating)}
+            </View>
+            <View className={styles.compareValue}>
+              <Text className={styles.compareNumber}>⭐ {r2.avgTasteRating}</Text>
+            </View>
+          </View>
+
+          <View className={styles.compareTagsSection}>
+            <Text className={styles.compareSectionTitle}>🏷️ 口味标签对比</Text>
+            <View className={styles.compareTagsRow}>
+              <View className={styles.compareTagsColumn}>
+                {r1.topTasteTags.slice(0, 5).map((tag, i) => (
+                  <View key={i} className={styles.compareTagItem}>
+                    <Text className={styles.compareTagName}>{tag.tag}</Text>
+                    <View className={styles.compareTagBar}>
+                      <View
+                        className={classnames(styles.compareTagFill, styles.tagFill1)}
+                        style={{ width: `${(tag.count / maxCompareTag) * 100}%` }}
+                      ></View>
+                    </View>
+                    <Text className={styles.compareTagCount}>{tag.count}</Text>
+                  </View>
+                ))}
+              </View>
+              <View className={styles.compareTagsColumn}>
+                {r2.topTasteTags.slice(0, 5).map((tag, i) => (
+                  <View key={i} className={styles.compareTagItem}>
+                    <Text className={styles.compareTagName}>{tag.tag}</Text>
+                    <View className={styles.compareTagBar}>
+                      <View
+                        className={classnames(styles.compareTagFill, styles.tagFill2)}
+                        style={{ width: `${(tag.count / maxCompareTag) * 100}%` }}
+                      ></View>
+                    </View>
+                    <Text className={styles.compareTagCount}>{tag.count}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View className={styles.compareTimeSection}>
+            <Text className={styles.compareSectionTitle}>⏰ 时段分布对比</Text>
+            <View className={styles.compareTimeChart}>
+              {r1.timeDistribution.map((item, i) => {
+                const count2 = r2.timeDistribution.find(t => t.hour === item.hour)?.count || 0
+                const max = Math.max(item.count, count2, 1)
+                return (
+                  <View key={i} className={styles.compareTimeItem}>
+                    <Text className={styles.compareTimeLabel}>{item.hour}</Text>
+                    <View className={styles.compareTimeBars}>
+                      <View className={styles.compareTimeBarGroup}>
+                        <View
+                          className={classnames(styles.compareTimeFill, styles.timeFill1)}
+                          style={{ height: `${(item.count / max) * 100}%` }}
+                        ></View>
+                        <Text className={styles.compareTimeCount}>{item.count}</Text>
+                      </View>
+                      <View className={styles.compareTimeBarGroup}>
+                        <View
+                          className={classnames(styles.compareTimeFill, styles.timeFill2)}
+                          style={{ height: `${(count2 / max) * 100}%` }}
+                        ></View>
+                        <Text className={styles.compareTimeCount}>{count2}</Text>
+                      </View>
+                    </View>
+                  </View>
+                )
+              })}
+            </View>
+            <View className={styles.compareLegend}>
+              <View className={styles.legendItem}>
+                <View className={classnames(styles.legendDot, styles.timeFill1)}></View>
+                <Text>{compareActivity1.productName.split(' ')[0]}</Text>
+              </View>
+              <View className={styles.legendItem}>
+                <View className={classnames(styles.legendDot, styles.timeFill2)}></View>
+                <Text>{compareActivity2.productName.split(' ')[0]}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    )
+  }
+
+  const hasAnyData = filteredActivities.length > 0
 
   return (
     <View className={styles.page}>
@@ -219,227 +577,251 @@ const ReportPage: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className={styles.content} scrollY>
-        {filteredActivities.length > 0 && (
-          <View className={styles.activityListSection}>
-            <Text className={styles.sectionTitle}>
-              📋 活动列表
-              <Text className={styles.listCount}>({filteredActivities.length}场)</Text>
-            </Text>
-            <ScrollView className={styles.activityListScroll} scrollX>
-              {filteredActivities.map((activity) => (
-                <View
-                  key={activity.id}
-                  className={classnames(styles.activityMiniCard, selectedActivityId === activity.id && styles.activityCardSelected)}
-                  onClick={() => handleSelectActivity(activity.id)}
-                >
-                  <Text className={styles.activityMiniStore}>{activity.storeName}</Text>
-                  <Text className={styles.activityMiniProduct}>{activity.productName}</Text>
-                  <Text className={styles.activityMiniTime}>
-                    {formatDateTime(activity.startTime)}
-                  </Text>
-                  <View className={styles.activityMiniStats}>
-                    <Text className={styles.activityMiniStat}>
-                      试吃 {activity.usedSamples}
-                    </Text>
-                    <Text className={styles.activityMiniStat}>
-                      购买 {activity.purchaseCount}
-                    </Text>
-                  </View>
-                  {selectedActivityId === activity.id && (
-                    <View className={styles.selectedIndicator}>✓ 已选中</View>
-                  )}
-                </View>
-              ))}
-            </ScrollView>
-            {selectedActivityId && (
-              <Text className={styles.clearSelection} onClick={() => setSelectedActivityId(null)}>
-                清除选中，查看汇总
-              </Text>
-            )}
+      <View className={styles.viewModeBar}>
+        <View
+          className={classnames(styles.viewModeItem, viewMode === 'timeline' && styles.viewModeActive)}
+          onClick={() => { setViewMode('timeline'); setCompareActivityIds([]) }}
+        >
+          📅 时间线
+        </View>
+        <View
+          className={classnames(styles.viewModeItem, viewMode === 'list' && styles.viewModeActive)}
+          onClick={() => setViewMode('list')}
+        >
+          📋 列表{compareActivityIds.length > 0 && `(${compareActivityIds.length}/2)`}
+        </View>
+        <View
+          className={classnames(styles.viewModeItem, viewMode === 'compare' && styles.viewModeActive)}
+          onClick={() => setViewMode('compare')}
+        >
+          ⚖️ 对比
+        </View>
+      </View>
+
+      {viewMode === 'list' && compareActivityIds.length > 0 && (
+        <View className={styles.compareToolbar}>
+          <Text className={styles.compareToolbarText}>已选 {compareActivityIds.length}/2 场活动</Text>
+          <View className={styles.compareToolbarActions}>
+            <Button
+              className={classnames(styles.compareToolbarBtn, styles.btnClear)}
+              onClick={handleClearCompare}
+            >
+              清除
+            </Button>
+            <Button
+              className={classnames(
+                styles.compareToolbarBtn,
+                styles.btnCompare,
+                compareActivityIds.length < 2 && styles.btnDisabled
+              )}
+              onClick={handleStartCompare}
+              disabled={compareActivityIds.length < 2}
+            >
+              开始对比
+            </Button>
           </View>
-        )}
+        </View>
+      )}
 
-        {hasData ? (
+      <ScrollView className={styles.content} scrollY>
+        {viewMode === 'compare' ? (
+          renderCompareView()
+        ) : hasAnyData ? (
           <>
-            <View className={styles.overviewCard}>
-              <View className={styles.overviewHeader}>
-                <View>
-                  <Text className={styles.overviewTitle}>
-                    {selectedActivity ? '单场活动复盘' : '活动汇总报告'}
-                  </Text>
-                  <Text className={styles.overviewPeriod}>{reportData!.period}</Text>
+            {reportData && (
+              <View className={styles.overviewCard}>
+                <View className={styles.overviewHeader}>
+                  <View>
+                    <Text className={styles.overviewTitle}>活动汇总</Text>
+                    <Text className={styles.overviewPeriod}>{reportData.period}</Text>
+                  </View>
+                  <View className={classnames(styles.overviewBadge, styles.badgeMulti)}>
+                    {filteredActivities.length}场汇总
+                  </View>
                 </View>
-                <View className={classnames(
-                  styles.overviewBadge,
-                  selectedActivity ? styles.badgeSingle : styles.badgeMulti
-                )}>
-                  {selectedActivity ? '单场数据' : `${filteredActivities.length}场汇总`}
-                </View>
-              </View>
-              <View className={styles.overviewStats}>
-                <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData!.totalTasters}</Text>
-                  <Text className={styles.overviewLabel}>试吃总人数</Text>
-                </View>
-                <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData!.purchaseCount}</Text>
-                  <Text className={styles.overviewLabel}>购买人数</Text>
-                </View>
-                <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData!.conversionRate}%</Text>
-                  <Text className={styles.overviewLabel}>购买转化率</Text>
-                </View>
-                <View className={styles.overviewStat}>
-                  <Text className={styles.overviewValue}>{reportData!.avgTasteRating}</Text>
-                  <Text className={styles.overviewLabel}>平均口味评分</Text>
+                <View className={styles.overviewStats}>
+                  <View className={styles.overviewStat}>
+                    <Text className={styles.overviewValue}>{reportData.totalTasters}</Text>
+                    <Text className={styles.overviewLabel}>试吃总人数</Text>
+                  </View>
+                  <View className={styles.overviewStat}>
+                    <Text className={styles.overviewValue}>{reportData.purchaseCount}</Text>
+                    <Text className={styles.overviewLabel}>购买人数</Text>
+                  </View>
+                  <View className={styles.overviewStat}>
+                    <Text className={styles.overviewValue}>{reportData.conversionRate}%</Text>
+                    <Text className={styles.overviewLabel}>购买转化率</Text>
+                  </View>
+                  <View className={styles.overviewStat}>
+                    <Text className={styles.overviewValue}>{reportData.avgTasteRating}</Text>
+                    <Text className={styles.overviewLabel}>平均口味评分</Text>
+                  </View>
                 </View>
               </View>
-            </View>
+            )}
 
-            <View className={styles.sectionCard}>
-              <View className={styles.sectionHeader}>
-                <Text className={styles.sectionTitle}>⏰ 时段分布</Text>
-                <Text className={styles.sectionMore}>按小时统计</Text>
-              </View>
-              <View className={styles.timeChart}>
-                {reportData!.timeDistribution.map((item, index) => {
-                  const widthPercent = (item.count / maxTimeCount) * 100
-                  return (
-                    <View key={index} className={styles.timeBar}>
-                      <Text className={styles.timeLabel}>{item.hour}</Text>
-                      <View className={styles.timeBarFill}>
+            {viewMode === 'timeline' ? (
+              renderTimelineView()
+            ) : (
+              <View className={styles.activityListSection}>
+                <Text className={styles.sectionTitle}>
+                  📋 活动列表
+                  <Text className={styles.listCount}>({filteredActivities.length}场，点击勾选对比)</Text>
+                </Text>
+                <View className={styles.activityListVertical}>
+                  {filteredActivities.map((activity) => (
+                    <View
+                      key={activity.id}
+                      className={classnames(
+                        styles.activityListItem,
+                        expandedActivityId === activity.id && styles.activityItemExpanded
+                      )}
+                      onClick={() => handleExpandActivity(activity.id)}
+                    >
+                      <View className={styles.activityListItemHeader}>
                         <View
-                          className={styles.timeBarInner}
-                          style={{ width: `${Math.max(widthPercent, 10)}%` }}
-                        >
-                          {item.count > 0 && (
-                            <Text className={styles.timeBarCount}>{item.count}人</Text>
+                          className={classnames(
+                            styles.compareCheckbox,
+                            styles.compareCheckboxLarge,
+                            compareActivityIds.includes(activity.id) && styles.compareChecked
                           )}
+                          onClick={(e) => { e.stopPropagation(); handleToggleCompare(activity.id) }}
+                        >
+                          {compareActivityIds.includes(activity.id) && '✓'}
                         </View>
-                      </View>
-                    </View>
-                  )
-                })}
-              </View>
-            </View>
-
-            <View className={styles.sectionCard}>
-              <View className={styles.sectionHeader}>
-                <Text className={styles.sectionTitle}>👥 年龄分布</Text>
-                <Text className={styles.sectionMore}>共 {reportData!.totalTasters} 人</Text>
-              </View>
-              <View className={styles.ageChart}>
-                {reportData!.ageDistribution.map((item, index) => {
-                  const progress = (item.count / maxAgeCount) * 100
-                  return (
-                    <View key={index} className={styles.ageItem}>
-                      <View
-                        className={classnames(styles.ageRing, styles[getAgeRingClass(index)])}
-                        style={{ '--progress': `${progress}%` } as React.CSSProperties}
-                      >
-                        <View className={styles.ageRingInner}>
-                          {item.count}
+                        <Image
+                          className={styles.activityListItemImage}
+                          src={activity.productImage}
+                          mode="aspectFill"
+                        />
+                        <View className={styles.activityListItemInfo}>
+                          <Text className={styles.activityListItemStore}>{activity.storeName}</Text>
+                          <Text className={styles.activityListItemProduct}>{activity.productName}</Text>
+                          <Text className={styles.activityListItemTime}>
+                            {formatDateTime(activity.startTime)}
+                          </Text>
                         </View>
-                      </View>
-                      <View className={styles.ageInfo}>
-                        <Text className={styles.ageName}>{item.group}</Text>
-                        <Text className={styles.ageCount}>
-                          占比 {reportData!.totalTasters > 0 ? ((item.count / reportData!.totalTasters) * 100).toFixed(1) : 0}%
+                        <View className={styles.activityListItemStats}>
+                          <Text className={styles.activityListItemStat}>
+                            试吃 {activity.usedSamples}
+                          </Text>
+                          <Text className={styles.activityListItemStat}>
+                            购买 {activity.purchaseCount}
+                          </Text>
+                        </View>
+                        <Text className={styles.timelineItemArrow}>
+                          {expandedActivityId === activity.id ? '▲' : '▼'}
                         </Text>
                       </View>
-                    </View>
-                  )
-                })}
-              </View>
-            </View>
 
-            <View className={styles.sectionCard}>
-              <View className={styles.sectionHeader}>
-                <Text className={styles.sectionTitle}>🏷️ 热门评价</Text>
-                <Text className={styles.sectionMore}>口味标签</Text>
-              </View>
-              <View className={styles.tagsCloud}>
-                {reportData!.topTasteTags.length > 0 ? (
-                  reportData!.topTasteTags.map((item, index) => (
-                    <View
-                      key={index}
-                      className={styles.tagCloudItem}
-                      style={{ fontSize: getTagFontSize(item.count) }}
-                    >
-                      <Text className={styles.tagCloudText}>{item.tag}</Text>
-                      <Text className={styles.tagCloudCount}>{item.count}</Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text className={styles.noTags}>暂无评价标签</Text>
-                )}
-              </View>
-            </View>
-
-            {abnormalReports.length > 0 && (
-              <View className={styles.sectionCard}>
-                <View className={styles.sectionHeader}>
-                  <Text className={styles.sectionTitle}>⚠️ 异常上报记录</Text>
-                  <Text className={styles.sectionMore}>共 {abnormalReports.length} 条</Text>
-                </View>
-                <View className={styles.reportList}>
-                  {abnormalReports.slice(0, 5).map((report) => (
-                    <View key={report.id} className={styles.reportItem}>
-                      <View className={styles.reportHeader}>
-                        <View
-                          className={classnames(styles.reportType, styles[getTypeClass(report.type)])}
-                        >
-                          {abnormalTypeLabels[report.type]}
+                      {activity.usedSamples === 0 && activity.abnormalReports.length > 0 && (
+                        <View className={styles.zeroTastingNotice}>
+                          ⚠️ 本场无试吃反馈，但有 {activity.abnormalReports.length} 条异常记录
                         </View>
-                        <Text className={styles.reportTime}>{formatTime(report.createdAt)}</Text>
-                      </View>
-                      <Text className={styles.reportDesc}>{report.description}</Text>
+                      )}
+
+                      {expandedActivityId === activity.id && (
+                        <View className={styles.timelineItemDetail}>
+                          <View className={styles.detailSection}>
+                            <Text className={styles.detailTitle}>📊 基础数据</Text>
+                            <View className={styles.detailStats}>
+                              <View className={styles.detailStat}>
+                                <Text className={styles.detailStatValue}>{activity.usedSamples}</Text>
+                                <Text className={styles.detailStatLabel}>试吃人数</Text>
+                              </View>
+                              <View className={styles.detailStat}>
+                                <Text className={styles.detailStatValue}>{activity.purchaseCount}</Text>
+                                <Text className={styles.detailStatLabel}>购买人数</Text>
+                              </View>
+                              <View className={styles.detailStat}>
+                                <Text className={styles.detailStatValue}>
+                                  {activity.usedSamples > 0 ? ((activity.purchaseCount / activity.usedSamples) * 100).toFixed(1) : 0}%
+                                </Text>
+                                <Text className={styles.detailStatLabel}>转化率</Text>
+                              </View>
+                              <View className={styles.detailStat}>
+                                <Text className={styles.detailStatValue}>
+                                  {activity.feedbacks.length > 0
+                                    ? (activity.feedbacks.reduce((s: number, f: Feedback) => s + f.tasteRating, 0) / activity.feedbacks.length).toFixed(1)
+                                    : '—'}
+                                </Text>
+                                <Text className={styles.detailStatLabel}>平均评分</Text>
+                              </View>
+                            </View>
+                          </View>
+
+                          {activity.feedbacks.length > 0 && (
+                            <View className={styles.detailSection}>
+                              <Text className={styles.detailTitle}>📝 反馈明细</Text>
+                              <View className={styles.feedbackList}>
+                                {activity.feedbacks.slice(0, 5).map((fb: Feedback) => (
+                                  <View key={fb.id} className={styles.feedbackMiniItem}>
+                                    <Text className={styles.feedbackTime}>{formatTime(fb.createdAt)}</Text>
+                                    <Text className={styles.feedbackAge}>
+                                      {fb.ageGroup === 'child' ? '儿童' :
+                                       fb.ageGroup === 'teen' ? '青少年' :
+                                       fb.ageGroup === 'adult' ? '成年人' : '老年人'}
+                                    </Text>
+                                    <View className={styles.feedbackStars}>
+                                      {Array.from({ length: 5 }).map((_, i) => (
+                                        <Text
+                                          key={i}
+                                          className={classnames(
+                                            styles.starIcon,
+                                            i < fb.tasteRating && styles.starFilled
+                                          )}
+                                        >★</Text>
+                                      ))}
+                                    </View>
+                                    <Text className={styles.feedbackIntent}>
+                                      {fb.purchaseIntent === 'high' ? '👍 强购' :
+                                       fb.purchaseIntent === 'medium' ? '🤔 考虑' :
+                                       fb.purchaseIntent === 'low' ? '😐 犹豫' : '👎 不购'}
+                                    </Text>
+                                  </View>
+                                ))}
+                              </View>
+                            </View>
+                          )}
+
+                          {activity.abnormalReports.length > 0 && (
+                            <View className={styles.detailSection}>
+                              <Text className={styles.detailTitle}>⚠️ 异常记录</Text>
+                              <View className={styles.abnormalMiniList}>
+                                {activity.abnormalReports.map(ab => (
+                                  <View key={ab.id} className={styles.abnormalMiniItem}>
+                                    <View className={classnames(styles.abnormalMiniType, styles[getTypeClass(ab.type)])}>
+                                      {abnormalTypeLabels[ab.type]}
+                                    </View>
+                                    <Text className={styles.abnormalMiniDesc}>{ab.description}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            </View>
+                          )}
+
+                          <View className={styles.detailSection}>
+                            <Text className={styles.detailTitle}>🎁 样品消耗</Text>
+                            <View className={styles.sampleDetail}>
+                              <View className={styles.sampleBar}>
+                                <View
+                                  className={styles.sampleBarUsed}
+                                  style={{ width: `${Math.min(100, (activity.usedSamples / activity.targetSamples) * 100)}%` }}
+                                ></View>
+                              </View>
+                              <View className={styles.sampleDetailStats}>
+                                <Text>已用 {activity.usedSamples}/{activity.targetSamples} 份</Text>
+                                <Text>剩余 {activity.remainingSamples} 份</Text>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      )}
                     </View>
                   ))}
-                  {abnormalReports.length > 5 && (
-                    <Text className={styles.moreReports}>还有 {abnormalReports.length - 5} 条记录</Text>
-                  )}
                 </View>
               </View>
             )}
-
-            <View className={styles.sectionCard}>
-              <View className={styles.sectionHeader}>
-                <Text className={styles.sectionTitle}>📋 活动信息</Text>
-              </View>
-              {selectedActivity ? (
-                <View className={styles.activityInfo}>
-                  <Image
-                    className={styles.activityImage}
-                    src={selectedActivity.productImage}
-                    mode="aspectFill"
-                  />
-                  <View className={styles.activityDetail}>
-                    <Text className={styles.activityName}>{selectedActivity.productName}</Text>
-                    <Text className={styles.activityStore}>📍 {selectedActivity.storeName}</Text>
-                    <Text className={styles.activityTime}>
-                      活动时间：{formatDateTime(selectedActivity.startTime)} - {formatDateTime(selectedActivity.endTime || selectedActivity.startTime)}
-                    </Text>
-                    <Text className={styles.activitySamples}>
-                      样品使用：{selectedActivity.usedSamples}/{selectedActivity.targetSamples} 份
-                    </Text>
-                  </View>
-                </View>
-              ) : (
-                <View className={styles.multiActivityInfo}>
-                  <Text className={styles.multiInfoText}>
-                    本次汇总包含 <Text className={styles.highlight}>{filteredActivities.length}</Text> 场活动
-                  </Text>
-                  <Text className={styles.multiInfoText}>
-                    覆盖 <Text className={styles.highlight}>{new Set(filteredActivities.map(a => a.storeName)).size}</Text> 家门店
-                  </Text>
-                  <Text className={styles.multiInfoText}>
-                    共 <Text className={styles.highlight}>{reportData!.totalTasters}</Text> 人参与试吃
-                  </Text>
-                </View>
-              )}
-            </View>
 
             <Button className={styles.exportBtn} onClick={handleExport}>
               📤 导出复盘报告

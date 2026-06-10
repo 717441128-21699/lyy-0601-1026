@@ -19,7 +19,8 @@ const ActivityPage: React.FC = () => {
     setSelectedProduct,
     startActivity,
     endActivity,
-    resetActivity
+    resetActivity,
+    clearAllData
   } = useActivityStore()
 
   const todayDate = dayjs().format('YYYY年MM月DD日 dddd')
@@ -89,6 +90,20 @@ const ActivityPage: React.FC = () => {
     })
   }
 
+  const handleClearAllData = () => {
+    Taro.showModal({
+      title: '清除所有数据',
+      content: '此操作将清除所有历史活动和反馈数据，确定继续吗？',
+      confirmColor: '#F53F3F',
+      success: (res) => {
+        if (res.confirm) {
+          clearAllData()
+          Taro.showToast({ title: '数据已清除', icon: 'success' })
+        }
+      }
+    })
+  }
+
   const canStart = selectedStore && selectedProduct && currentActivity?.status !== 'ongoing'
 
   const getStoreIndex = () => {
@@ -123,40 +138,41 @@ const ActivityPage: React.FC = () => {
       </View>
 
       <ScrollView className={styles.content} scrollY>
-        {currentActivity?.status === 'ongoing' ? (
-          <>
-            <View className={styles.sectionCard}>
-              <Text className={styles.sectionTitle}>活动概览</Text>
-              <View className={styles.activityInfo}>
-                <Image
-                  className={styles.activityImage}
-                  src={currentActivity.productImage}
-                  mode="aspectFill"
-                />
-                <View className={styles.activityDetail}>
-                  <Text className={styles.activityName}>{currentActivity.productName}</Text>
-                  <Text className={styles.activityStore}>📍 {currentActivity.storeName}</Text>
-                  <Text className={styles.activityTime}>
-                    开始时间：{formatDateTime(currentActivity.startTime)}
-                  </Text>
+        <View>
+          {currentActivity?.status === 'ongoing' ? (
+            <>
+              <View className={styles.sectionCard}>
+                <Text className={styles.sectionTitle}>活动概览</Text>
+                <View className={styles.activityInfo}>
+                  <Image
+                    className={styles.activityImage}
+                    src={currentActivity.productImage}
+                    mode="aspectFill"
+                  />
+                  <View className={styles.activityDetail}>
+                    <Text className={styles.activityName}>{currentActivity.productName}</Text>
+                    <Text className={styles.activityStore}>📍 {currentActivity.storeName}</Text>
+                    <Text className={styles.activityTime}>
+                      开始时间：{formatDateTime(currentActivity.startTime)}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              <View className={styles.statsGrid}>
-                <StatCard
-                  title="试吃人数"
-                  value={currentActivity.usedSamples}
-                  subtitle={`目标${currentActivity.targetSamples}份`}
-                  color="primary"
-                />
-                <StatCard
-                  title="购买人数"
-                  value={currentActivity.purchaseCount}
-                  color="success"
-                />
-                <StatCard
-                  title="转化率"
-                  value={`${conversionRate}%`}
+                <View className={styles.statsGrid}>
+                  <StatCard
+                    title="试吃人数"
+                    value={currentActivity.usedSamples}
+                    subtitle={`目标${currentActivity.targetSamples}份`}
+                    color="primary"
+                  />
+                  <StatCard
+                    title="购买人数"
+                    value={currentActivity.purchaseCount}
+                    color="success"
+                  />
+                  <StatCard
+                    title="转化率"
+                    value={`${conversionRate}%`}
                   color="warning"
                 />
                 <StatCard
@@ -299,6 +315,17 @@ const ActivityPage: React.FC = () => {
             </View>
           </>
         )}
+
+        <View className={styles.debugSection}>
+          <Text className={styles.debugTitle}>🔧 调试工具</Text>
+          <Button
+            className={styles.debugButton}
+            onClick={handleClearAllData}
+          >
+            🗑️ 清除所有数据
+          </Button>
+        </View>
+        </View>
       </ScrollView>
 
       <View className={styles.bottomBar}>

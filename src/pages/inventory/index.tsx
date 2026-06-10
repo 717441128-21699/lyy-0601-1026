@@ -6,9 +6,9 @@ import classnames from 'classnames'
 import { useActivityStore } from '@/store/useActivityStore'
 import StatCard from '@/components/StatCard'
 import EmptyState from '@/components/EmptyState'
-import { calculateConversionRate, formatTime, formatDateTime } from '@/utils'
+import { calculateConversionRate, formatTime } from '@/utils'
 import { abnormalTypeLabels } from '@/data/feedbacks'
-import { AbnormalType, Activity } from '@/types'
+import { AbnormalType } from '@/types'
 
 const InventoryPage: React.FC = () => {
   const {
@@ -23,7 +23,6 @@ const InventoryPage: React.FC = () => {
   const [modalType, setModalType] = useState<AbnormalType | ''>('')
   const [reportDesc, setReportDesc] = useState('')
   const [inputValue, setInputValue] = useState('')
-  const [selectedHistoryActivity, setSelectedHistoryActivity] = useState<Activity | null>(null)
 
   useEffect(() => {
     if (currentActivity) {
@@ -35,27 +34,25 @@ const InventoryPage: React.FC = () => {
     }
   }, [currentActivity?.remainingSamples, currentActivity?.id])
 
-  const displayActivity = selectedHistoryActivity || currentActivity
-
   const stats = useMemo(() => {
-    if (!displayActivity) {
+    if (!currentActivity) {
       return { tasters: 0, buyers: 0, rate: 0, remaining: 0, used: 0, target: 50 }
     }
-    const rate = calculateConversionRate(displayActivity.usedSamples, displayActivity.purchaseCount)
+    const rate = calculateConversionRate(currentActivity.usedSamples, currentActivity.purchaseCount)
     return {
-      tasters: displayActivity.usedSamples,
-      buyers: displayActivity.purchaseCount,
+      tasters: currentActivity.usedSamples,
+      buyers: currentActivity.purchaseCount,
       rate,
-      remaining: displayActivity.remainingSamples,
-      used: displayActivity.usedSamples,
-      target: displayActivity.targetSamples
+      remaining: currentActivity.remainingSamples,
+      used: currentActivity.usedSamples,
+      target: currentActivity.targetSamples
     }
-  }, [displayActivity])
+  }, [currentActivity])
 
   const commonProblems = useMemo(() => {
-    if (!displayActivity) return []
+    if (!currentActivity) return []
     const problems: Record<string, number> = {}
-    displayActivity.feedbacks
+    currentActivity.feedbacks
       .filter(f => f.notPurchaseReason)
       .forEach(f => {
         const reason = f.notPurchaseReason!
@@ -65,12 +62,12 @@ const InventoryPage: React.FC = () => {
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
-  }, [displayActivity])
+  }, [currentActivity])
 
   const progressPercent = useMemo(() => {
-    if (!displayActivity || displayActivity.targetSamples === 0) return 0
-    return Math.min((displayActivity.usedSamples / displayActivity.targetSamples) * 100, 100)
-  }, [displayActivity])
+    if (!currentActivity || currentActivity.targetSamples === 0) return 0
+    return Math.min((currentActivity.usedSamples / currentActivity.targetSamples) * 100, 100)
+  }, [currentActivity])
 
   const validateAndUpdateSamples = (newRemaining: number) => {
     if (!currentActivity || currentActivity.status !== 'ongoing') return
@@ -93,10 +90,6 @@ const InventoryPage: React.FC = () => {
   const handleSampleChange = (delta: number) => {
     if (!currentActivity || currentActivity.status !== 'ongoing') {
       Taro.showToast({ title: '请先开始活动', icon: 'none' })
-      return
-    }
-    if (selectedHistoryActivity) {
-      Taro.showToast({ title: '历史活动数据不可修改', icon: 'none' })
       return
     }
     const newValue = sampleCount + delta
@@ -138,10 +131,6 @@ const InventoryPage: React.FC = () => {
       Taro.showToast({ title: '请先开始活动', icon: 'none' })
       return
     }
-    if (selectedHistoryActivity) {
-      Taro.showToast({ title: '请切换到当前活动', icon: 'none' })
-      return
-    }
     setModalType(type)
     setReportDesc('')
     setShowModal(true)
@@ -169,11 +158,11 @@ const InventoryPage: React.FC = () => {
   ]
 
   const currentReports = useMemo(() => {
-    if (!displayActivity) return []
-    return displayActivity.abnormalReports.slice().sort(
+    if (!currentActivity) return []
+    return currentActivity.abnormalReports.slice().sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
-  }, [displayActivity])
+  }, [currentActivity])
 
   const getTypeClass = (type: string) => {
     switch (type) {
@@ -184,62 +173,23 @@ const InventoryPage: React.FC = () => {
     }
   }
 
-  const isActivityOngoing = currentActivity?.status === 'ongoing' && !selectedHistoryActivity
+  const isActivityOngoing = currentActivity?.status === 'ongoing'
   const canModify = isActivityOngoing
 
-  const handleSelectHistory = (activity: Activity) => {
-    if (selectedHistoryActivity?.id === activity.id) {
-      setSelectedHistoryActivity(null)
-    } else {
-      setSelectedHistoryActivity(activity)
-    }
-  }
-
-  const handleBackToCurrent = () => {
-    setSelectedHistoryActivity(null)
+  const goToReport = () => {
+    Taro.switchTab({ url: '/pages/report/index' })
   }
 
   return (
     <View className={styles.page}>
       <ScrollView className={styles.content} scrollY>
-        {activityHistory.length > 0 && !selectedHistoryActivity && (
-          <View className={styles.historySection}>
-            <Text className={styles.historyTitle}>📋 历史活动记录</Text>
-            <ScrollView className={styles.historyScroll} scrollX>
-              {activityHistory.map((activity) => (
-                <View
-                  key={activity.id}
-                  className={styles.historyCard}
-                  onClick={() => handleSelectHistory(activity)}
-                >
-                  <Text className={styles.historyStore}>{activity.storeName}</Text>
-                  <Text className={styles.historyProduct}>{activity.productName}</Text>
-                  <Text className={styles.historyTime}>{formatDateTime(activity.startTime)}</Text>
-                  <Text className={styles.historyStats}>
-                    试吃{activity.usedSamples}人 · 购买{activity.purchaseCount}人
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {selectedHistoryActivity && (
-          <View className={styles.historyHeader}>
-            <Text className={styles.historySubtitle}>
-              查看历史活动：{selectedHistoryActivity.storeName}
+        {activityHistory.length > 0 && (
+          <View className={styles.historyTip}>
+            <Text className={styles.historyTipText}>
+              📊 已有 <Text className={styles.historyTipCount}>{activityHistory.length}</Text> 场历史活动
             </Text>
-            <Button className={styles.backBtn} onClick={handleBackToCurrent}>
-              返回当前
-            </Button>
-          </View>
-        )}
-
-        {displayActivity && selectedHistoryActivity && (
-          <View className={styles.historyActivityInfo}>
-            <Text className={styles.activityInfoTitle}>{selectedHistoryActivity.productName}</Text>
-            <Text className={styles.activityInfoTime}>
-              {formatDateTime(selectedHistoryActivity.startTime)} - {formatDateTime(selectedHistoryActivity.endTime!)}
+            <Text className={styles.historyTipLink} onClick={goToReport}>
+              去活动复盘查看 →
             </Text>
           </View>
         )}
@@ -270,7 +220,7 @@ const InventoryPage: React.FC = () => {
 
         <View className={styles.sectionCard}>
           <Text className={styles.sectionTitle}>样品管理</Text>
-          {displayActivity ? (
+          {currentActivity ? (
             <>
               <View className={styles.sampleManager}>
                 <View className={styles.sampleInfo}>
@@ -318,9 +268,9 @@ const InventoryPage: React.FC = () => {
                 ></View>
               </View>
 
-              {!canModify && displayActivity && (
+              {!canModify && currentActivity && (
                 <Text className={styles.sampleHint}>
-                  {selectedHistoryActivity ? '历史活动数据仅供查看' : '活动已结束，无法修改样品数量'}
+                  活动已结束，无法修改样品数量，历史数据请前往活动复盘查看
                 </Text>
               )}
             </>
@@ -386,7 +336,7 @@ const InventoryPage: React.FC = () => {
             <View className={styles.emptyReport}>
               <EmptyState
                 title="暂无上报记录"
-                description={displayActivity ? '如发现异常情况，请及时上报' : '请先开始活动'}
+                description={currentActivity ? '如发现异常情况，请及时上报' : '请先开始活动'}
                 icon="📋"
               />
             </View>

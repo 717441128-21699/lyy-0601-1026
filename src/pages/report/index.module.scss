@@ -652,3 +652,788 @@
   color: $color-text-tertiary;
   margin-top: $spacing-xs;
 }
+
+.viewModeBar {
+  display: flex;
+  background: $color-bg-card;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  margin: 0 $spacing-lg $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.viewModeItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border-radius: $radius-sm;
+  transition: all $transition-fast;
+
+  &.viewModeActive {
+    background: $gradient-primary;
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.compareToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(22, 93, 255, 0.08);
+  padding: $spacing-md $spacing-lg;
+  margin: 0 $spacing-lg $spacing-md;
+  border-radius: $radius-md;
+  border: 1rpx solid rgba(22, 93, 255, 0.2);
+}
+
+.compareToolbarText {
+  font-size: $font-size-sm;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.compareToolbarActions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.compareToolbarBtn {
+  @include button-reset;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+  height: auto;
+  line-height: 1.4;
+
+  &.btnClear {
+    background: $color-bg-page;
+    color: $color-text-secondary;
+  }
+
+  &.btnCompare {
+    background: $gradient-primary;
+    color: $color-text-white;
+  }
+
+  &.btnDisabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.timelineSection {
+  margin: 0 $spacing-lg;
+}
+
+.timelineDateGroup {
+  margin-bottom: $spacing-xl;
+}
+
+.timelineDateHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  padding-left: $spacing-sm;
+}
+
+.timelineDateDot {
+  width: 16rpx;
+  height: 16rpx;
+  background: $color-primary;
+  border-radius: 50%;
+  margin-right: $spacing-sm;
+  box-shadow: 0 0 0 6rpx rgba(22, 93, 255, 0.15);
+}
+
+.timelineDateText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.timelineDateCount {
+  margin-left: auto;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  background: $color-bg-page;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-round;
+}
+
+.timelineList {
+  position: relative;
+  padding-left: $spacing-lg;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 7rpx;
+    top: 0;
+    bottom: 0;
+    width: 2rpx;
+    background: rgba(22, 93, 255, 0.2);
+  }
+}
+
+.timelineItem {
+  position: relative;
+  margin-bottom: $spacing-md;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.timelineItemLine {
+  position: absolute;
+  left: -30rpx;
+  top: 30rpx;
+  width: 16rpx;
+  height: 16rpx;
+  background: $color-bg-card;
+  border: 3rpx solid $color-primary;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.timelineItemCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+  transition: all $transition-fast;
+
+  &.timelineCardExpanded {
+    border: 1rpx solid $color-primary;
+  }
+}
+
+.timelineItemHeader {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md;
+  gap: $spacing-md;
+}
+
+.timelineItemTime {
+  background: $gradient-primary;
+  color: $color-text-white;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  min-width: 90rpx;
+  text-align: center;
+}
+
+.timelineItemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.timelineItemStore {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.timelineItemProduct {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: 4rpx;
+  @include text-ellipsis;
+}
+
+.timelineItemStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+}
+
+.timelineItemStat {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.timelineItemArrow {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  transition: transform $transition-fast;
+}
+
+.compareCheckbox {
+  width: 36rpx;
+  height: 36rpx;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-xs;
+  color: $color-text-white;
+  background: $color-bg-page;
+  transition: all $transition-fast;
+
+  &.compareCheckboxLarge {
+    width: 44rpx;
+    height: 44rpx;
+    font-size: $font-size-sm;
+  }
+
+  &.compareChecked {
+    background: $gradient-primary;
+    border-color: $color-primary;
+  }
+}
+
+.timelineItemDetail {
+  padding: 0 $spacing-md $spacing-md;
+  border-top: 1rpx solid $color-border;
+  background: $color-bg-page;
+}
+
+.detailSection {
+  margin-top: $spacing-md;
+
+  &:first-child {
+    margin-top: $spacing-md;
+  }
+}
+
+.detailTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.detailStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $spacing-sm;
+}
+
+.detailStat {
+  background: $color-bg-card;
+  border-radius: $radius-sm;
+  padding: $spacing-sm;
+  text-align: center;
+}
+
+.detailStatValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  display: block;
+}
+
+.detailStatLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.feedbackList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.feedbackMiniItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: $color-bg-card;
+  padding: $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.feedbackTime {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  min-width: 80rpx;
+}
+
+.feedbackAge {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  background: $color-bg-page;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-round;
+  min-width: 70rpx;
+  text-align: center;
+}
+
+.feedbackStars {
+  display: flex;
+  gap: 4rpx;
+  flex: 1;
+}
+
+.starIcon {
+  font-size: $font-size-sm;
+  color: $color-border;
+
+  &.starFilled {
+    color: #f8c41e;
+  }
+}
+
+.feedbackIntent {
+  font-size: $font-size-xs;
+  min-width: 80rpx;
+  text-align: right;
+}
+
+.abnormalMiniList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.abnormalMiniItem {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-sm;
+  background: $color-bg-card;
+  padding: $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.abnormalMiniType {
+  padding: 4rpx 12rpx;
+  border-radius: $radius-round;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+}
+
+.abnormalMiniDesc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.sampleDetail {
+  background: $color-bg-card;
+  padding: $spacing-md;
+  border-radius: $radius-sm;
+}
+
+.sampleBar {
+  height: 16rpx;
+  background: rgba(22, 93, 255, 0.1);
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.sampleBarUsed {
+  height: 100%;
+  background: $gradient-primary;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}
+
+.sampleDetailStats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: $spacing-sm;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.activityListVertical {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.activityListItem {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+  transition: all $transition-fast;
+
+  &.activityItemExpanded {
+    border: 1rpx solid $color-primary;
+  }
+}
+
+.activityListItemHeader {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md;
+  gap: $spacing-md;
+}
+
+.activityListItemImage {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-sm;
+  background: $color-bg-page;
+}
+
+.activityListItemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.activityListItemStore {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+}
+
+.activityListItemProduct {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-top: 4rpx;
+  @include text-ellipsis;
+}
+
+.activityListItemTime {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.activityListItemStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+}
+
+.activityListItemStat {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.zeroTastingNotice {
+  background: rgba(245, 63, 63, 0.08);
+  color: $color-error;
+  padding: $spacing-sm $spacing-md;
+  margin: 0 $spacing-md;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  border-left: 4rpx solid $color-error;
+}
+
+.compareSection {
+  padding: 0 $spacing-lg;
+}
+
+.compareHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.backToListBtn,
+.clearCompareBtn {
+  @include button-reset;
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-card;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+  height: auto;
+  line-height: 1.4;
+}
+
+.compareTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.compareGrid {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+}
+
+.compareHeaderRow {
+  display: grid;
+  grid-template-columns: 140rpx 1fr 1fr;
+  border-bottom: 1rpx solid $color-border;
+}
+
+.compareHeaderCell {
+  padding: $spacing-md;
+  background: $color-bg-page;
+}
+
+.compareActivityHeader {
+  padding: $spacing-md;
+  text-align: center;
+  border-left: 1rpx solid $color-border;
+}
+
+.compareActivityImage {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-sm;
+  margin: 0 auto $spacing-sm;
+  display: block;
+}
+
+.compareActivityName {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+  @include text-ellipsis;
+}
+
+.compareActivityStore {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.compareRow {
+  display: grid;
+  grid-template-columns: 140rpx 1fr 1fr;
+  align-items: center;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.compareLabel {
+  padding: 0 $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.compareValue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  padding: 0 $spacing-md;
+  border-left: 1rpx solid $color-border;
+}
+
+.compareNumber {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.valueSuccess {
+  color: $color-success;
+}
+
+.valueWarning {
+  color: $color-warning;
+}
+
+.valueError {
+  color: $color-error;
+}
+
+.diffPositive {
+  font-size: $font-size-xs;
+  color: $color-success;
+  font-weight: $font-weight-medium;
+}
+
+.diffNegative {
+  font-size: $font-size-xs;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+}
+
+.diffEqual {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.compareTagsSection,
+.compareTimeSection {
+  margin-top: $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.compareSectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.compareTagsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-md;
+}
+
+.compareTagsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.compareTagItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.compareTagName {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  min-width: 100rpx;
+}
+
+.compareTagBar {
+  flex: 1;
+  height: 12rpx;
+  background: $color-bg-page;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.compareTagFill {
+  height: 100%;
+  border-radius: $radius-round;
+  transition: width $transition-base;
+
+  &.tagFill1 {
+    background: $color-primary;
+  }
+
+  &.tagFill2 {
+    background: $color-success;
+  }
+}
+
+.compareTagCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  min-width: 40rpx;
+  text-align: right;
+}
+
+.compareTimeChart {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 200rpx;
+  padding: $spacing-md 0;
+  border-bottom: 1rpx solid $color-border;
+  margin-bottom: $spacing-md;
+}
+
+.compareTimeItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: $spacing-sm;
+}
+
+.compareTimeLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  order: 2;
+}
+
+.compareTimeBars {
+  display: flex;
+  gap: 4rpx;
+  align-items: flex-end;
+  height: 140rpx;
+  order: 1;
+}
+
+.compareTimeBarGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.compareTimeFill {
+  width: 16rpx;
+  border-radius: 4rpx 4rpx 0 0;
+  transition: height $transition-base;
+
+  &.timeFill1 {
+    background: $color-primary;
+  }
+
+  &.timeFill2 {
+    background: $color-success;
+  }
+}
+
+.compareTimeCount {
+  font-size: 18rpx;
+  color: $color-text-tertiary;
+  order: 3;
+}
+
+.compareLegend {
+  display: flex;
+  justify-content: center;
+  gap: $spacing-xl;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.legendDot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 4rpx;
+}
+
+.emptyCompare {
+  text-align: center;
+  padding: $spacing-xl $spacing-lg;
+}
+
+.switchToListBtn {
+  @include button-reset;
+  margin-top: $spacing-xl;
+  padding: $spacing-md $spacing-xl;
+  background: $gradient-primary;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  border-radius: $radius-button;
+  height: auto;
+  line-height: 1.4;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
