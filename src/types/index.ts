@@ -58,6 +58,7 @@ export interface PersistedState {
   selectedStoreId: string | null
   selectedProductId: string | null
   activityHistory: Activity[]
+  comparisonRecords: ComparisonRecord[]
 }
 
 export interface InventoryReport {
@@ -93,7 +94,57 @@ export interface ReportData {
   topTasteTags: { tag: string; count: number }[]
 }
 
+export interface DimensionSummary {
+  key: string
+  name: string
+  activityCount: number
+  totalTasters: number
+  totalPurchases: number
+  avgConversionRate: number
+  avgRating: number
+  abnormalCount: number
+  highConversionActivities: Activity[]
+  lowRatingActivities: Activity[]
+  activities: Activity[]
+}
+
+export interface ManagerViewData {
+  byStore: DimensionSummary[]
+  byProduct: DimensionSummary[]
+  byPromoter: DimensionSummary[]
+  period: string
+  totalActivities: number
+  totalTasters: number
+  totalPurchases: number
+  overallConversionRate: number
+  overallAvgRating: number
+}
+
+export interface DailySummary {
+  date: string
+  activityCount: number
+  totalTasters: number
+  totalPurchases: number
+  avgConversionRate: number
+  avgRating: number
+  abnormalCount: number
+  activities: Activity[]
+}
+
+export interface ComparisonRecord {
+  id: string
+  activityId1: string
+  activityId2: string
+  activity1Snapshot: Activity
+  activity2Snapshot: Activity
+  winnerId: string | null
+  reason: string
+  createdAt: string
+}
+
 export type AgeGroup = 'child' | 'teen' | 'adult' | 'senior'
 export type PurchaseIntent = 'high' | 'medium' | 'low' | 'none'
 export type AbnormalType = 'out_of_stock' | 'price_error' | 'competitor'
 export type ActivityStatus = 'pending' | 'ongoing' | 'completed'
+export type ManagerDimension = 'store' | 'product' | 'promoter'
+export type ReportViewMode = 'timeline' | 'list' | 'compare' | 'manager' | 'comparisons'

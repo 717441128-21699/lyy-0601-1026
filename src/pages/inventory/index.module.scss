@@ -566,3 +566,92 @@
 .historyTipLink:active {
   opacity: 0.7;
 }
+
+.ongoingActivityHeader {
+  background: linear-gradient(135deg, $color-primary 0%, $color-info 100%);
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  color: $color-text-white;
+}
+
+.ongoingActivityTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  display: block;
+  margin-bottom: $spacing-sm;
+}
+
+.ongoingActivityProduct {
+  font-size: $font-size-md;
+  opacity: 0.9;
+  display: block;
+  margin-bottom: $spacing-md;
+}
+
+.ongoingActivityStatus {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.statusDot {
+  width: 16rpx;
+  height: 16rpx;
+  background: $color-success;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.statusText {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+}
+
+.emptyInventory {
+  padding: $spacing-xl $spacing-lg;
+  text-align: center;
+}
+
+.emptyActions {
+  margin-top: $spacing-xl;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.emptyActionBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-md;
+  line-height: $button-height-md;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+
+  &.btnPrimary {
+    background: $gradient-primary;
+    color: $color-text-white;
+  }
+
+  &.btnSecondary {
+    background: $color-bg-page;
+    color: $color-text-secondary;
+    border: 2rpx solid $color-border;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}

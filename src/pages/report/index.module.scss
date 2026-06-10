@@ -1437,3 +1437,632 @@
     transform: scale(0.98);
   }
 }
+
+.viewModeTabs {
+  display: flex;
+  background: $color-bg-card;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  margin: 0 $spacing-lg $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.viewModeItem {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border-radius: $radius-sm;
+  transition: all $transition-fast;
+
+  &.viewModeActive {
+    background: $gradient-primary;
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.managerSection {
+  padding: 0 $spacing-lg;
+}
+
+.managerSummary {
+  background: $gradient-primary;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  margin-bottom: $spacing-lg;
+  color: $color-text-white;
+  box-shadow: $shadow-card;
+}
+
+.managerSummaryTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-lg;
+  display: block;
+}
+
+.managerSummaryStats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: $spacing-md;
+}
+
+.managerSummaryStat {
+  text-align: center;
+}
+
+.managerSummaryValue {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  display: block;
+  margin-bottom: $spacing-xs;
+}
+
+.managerSummaryLabel {
+  font-size: 20rpx;
+  opacity: 0.9;
+}
+
+.dimensionTabs {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  background: $color-bg-card;
+  padding: $spacing-sm;
+  border-radius: $radius-md;
+  box-shadow: $shadow-card;
+}
+
+.dimensionTab {
+  flex: 1;
+  text-align: center;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  border-radius: $radius-sm;
+  transition: all $transition-fast;
+
+  &.dimensionTabActive {
+    background: $gradient-primary;
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.dimensionCardList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.dimensionCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-fast;
+
+  &.dimensionCardExpanded {
+    border: 2rpx solid $color-primary;
+  }
+}
+
+.dimensionCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: $spacing-md;
+  cursor: pointer;
+}
+
+.dimensionCardTitle {
+  flex: 1;
+}
+
+.dimensionCardName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.dimensionCardActivityCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+}
+
+.dimensionCardBadges {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dimensionBadge {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.badgeHighConversion {
+    background: rgba(0, 180, 42, 0.15);
+    color: $color-success;
+  }
+
+  &.badgeLowRating {
+    background: rgba(245, 63, 63, 0.15);
+    color: $color-error;
+  }
+
+  &.badgeSmall {
+    padding: 4rpx 12rpx;
+    font-size: 20rpx;
+  }
+}
+
+.dimensionCardStats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: $spacing-sm;
+}
+
+.dimensionCardStat {
+  text-align: center;
+  background: $color-bg-page;
+  border-radius: $radius-sm;
+  padding: $spacing-sm;
+}
+
+.dimensionCardStatValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.dimensionCardStatLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.statSuccess {
+  color: $color-success !important;
+}
+
+.statWarning {
+  color: $color-warning !important;
+}
+
+.statError {
+  color: $color-error !important;
+}
+
+.dimensionActivityList {
+  margin-top: $spacing-lg;
+  padding-top: $spacing-lg;
+  border-top: 1rpx solid $color-border;
+}
+
+.dimensionActivityListTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: block;
+}
+
+.dimensionActivityItem {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-md;
+  overflow: hidden;
+  transition: all $transition-fast;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &.dimensionActivityItemExpanded {
+    border: 1rpx solid $color-primary;
+  }
+}
+
+.dimensionActivityItemHeader {
+  display: flex;
+  align-items: center;
+  padding: $spacing-md;
+  gap: $spacing-md;
+  cursor: pointer;
+}
+
+.dimensionActivityImage {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+  background: $color-bg-card;
+}
+
+.dimensionActivityInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.dimensionActivityNameRow {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: 4rpx;
+}
+
+.dimensionActivityStore {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.dimensionActivityBadges {
+  display: flex;
+  gap: $spacing-xs;
+}
+
+.dimensionActivityProduct {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  @include text-ellipsis;
+}
+
+.dimensionActivityTime {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.dimensionActivityStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+}
+
+.dimensionActivityStat {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.dimensionCardExpandHint {
+  text-align: center;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1rpx dashed $color-border;
+}
+
+.dailySummaryCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+}
+
+.dailySummaryHeader {
+  display: flex;
+  align-items: center;
+  padding: $spacing-lg;
+  gap: $spacing-md;
+  cursor: pointer;
+}
+
+.dailySummaryDate {
+  flex-shrink: 0;
+}
+
+.dailySummaryDateText {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.dailySummaryCount {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  background: $color-bg-page;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-round;
+  margin-top: $spacing-xs;
+  display: inline-block;
+}
+
+.dailySummaryStats {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: $spacing-sm;
+}
+
+.dailySummaryStat {
+  text-align: center;
+}
+
+.dailySummaryStatValue {
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.dailySummaryStatLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.dailyActivityList {
+  padding: 0 $spacing-lg $spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.compareConclusionSection {
+  margin-top: $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.winnerSelector {
+  margin-bottom: $spacing-lg;
+}
+
+.winnerSelectorLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: block;
+}
+
+.winnerButtons {
+  display: flex;
+  gap: $spacing-md;
+}
+
+.winnerButton {
+  @include button-reset;
+  flex: 1;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  border-radius: $radius-md;
+  border: 2rpx solid transparent;
+  transition: all $transition-fast;
+  height: auto;
+  line-height: 1.4;
+
+  &.winnerButtonActive {
+    background: rgba(22, 93, 255, 0.1);
+    border-color: $color-primary;
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.reasonInput {
+  margin-bottom: $spacing-lg;
+}
+
+.reasonInputLabel {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: block;
+}
+
+.reasonTextarea {
+  width: 100%;
+  min-height: 160rpx;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  border: 2rpx solid $color-border;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  line-height: 1.6;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: $color-primary;
+    background: $color-bg-card;
+  }
+}
+
+.saveConclusionBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-lg;
+  background: $gradient-secondary;
+  border-radius: $radius-button;
+  color: $color-text-white;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  transition: all $transition-base;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+}
+
+.comparisonsSection {
+  padding: 0 $spacing-lg;
+}
+
+.comparisonsTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+  display: block;
+}
+
+.comparisonRecordCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  transition: all $transition-fast;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.comparisonRecordHeader {
+  margin-bottom: $spacing-md;
+}
+
+.comparisonRecordTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.comparisonRecordActivities {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.comparisonRecordActivity {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: $color-bg-page;
+  border-radius: $radius-sm;
+  padding: $spacing-sm;
+  position: relative;
+}
+
+.comparisonRecordImage {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: $radius-sm;
+  flex-shrink: 0;
+  background: $color-bg-card;
+}
+
+.comparisonRecordInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.comparisonRecordProduct {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  @include text-ellipsis;
+  display: block;
+}
+
+.comparisonRecordStore {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  @include text-ellipsis;
+}
+
+.comparisonRecordWinnerTag {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  background: $color-success;
+  color: $color-text-white;
+  font-size: 20rpx;
+  font-weight: $font-weight-medium;
+  padding: 4rpx 12rpx;
+  border-radius: $radius-round;
+}
+
+.comparisonRecordVs {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  flex-shrink: 0;
+}
+
+.comparisonRecordReason {
+  background: $color-bg-page;
+  border-radius: $radius-sm;
+  padding: $spacing-md;
+}
+
+.comparisonRecordReasonLabel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+  margin-bottom: $spacing-xs;
+  display: block;
+}
+
+.comparisonRecordReasonText {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.comparisonRecordFooter {
+  margin-top: $spacing-md;
+  text-align: right;
+}
+
+.comparisonRecordHint {
+  font-size: $font-size-xs;
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.winnerBadge {
+  position: absolute;
+  top: -10rpx;
+  left: -10rpx;
+  font-size: 32rpx;
+  z-index: 1;
+}
+
+.compareWinner {
+  background: rgba(0, 180, 42, 0.08) !important;
+  position: relative;
+}
+
+.compareActivityHeader {
+  position: relative;
+}

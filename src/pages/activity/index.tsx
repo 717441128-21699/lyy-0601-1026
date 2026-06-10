@@ -316,15 +316,17 @@ const ActivityPage: React.FC = () => {
           </>
         )}
 
-        <View className={styles.debugSection}>
-          <Text className={styles.debugTitle}>🔧 调试工具</Text>
-          <Button
-            className={styles.debugButton}
-            onClick={handleClearAllData}
-          >
-            🗑️ 清除所有数据
-          </Button>
-        </View>
+        {process.env.NODE_ENV === 'development' && (
+          <View className={styles.debugSection}>
+            <Text className={styles.debugTitle}>🔧 调试工具</Text>
+            <Button
+              className={styles.debugButton}
+              onClick={handleClearAllData}
+            >
+              🗑️ 清除所有数据
+            </Button>
+          </View>
+        )}
         </View>
       </ScrollView>
 

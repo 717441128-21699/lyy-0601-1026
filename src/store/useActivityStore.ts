@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { Activity, Feedback, AbnormalReport, Product, Store, ReportData, PersistedState } from '@/types'
+import { Activity, Feedback, AbnormalReport, Product, Store, ReportData, PersistedState, ManagerViewData, DailySummary, ComparisonRecord, DimensionSummary } from '@/types'
 import { mockProducts } from '@/data/products'
 import { mockStores } from '@/data/stores'
 import dayjs from 'dayjs'
@@ -39,6 +39,7 @@ interface ActivityState {
   allFeedbacks: Feedback[]
   allAbnormalReports: AbnormalReport[]
   activityHistory: Activity[]
+  comparisonRecords: ComparisonRecord[]
   products: Product[]
   stores: Store[]
   selectedStore: Store | null
@@ -59,6 +60,10 @@ interface ActivityState {
   getActivityById: (id: string) => Activity | undefined
   getActivityAbnormalReports: (activityId: string) => AbnormalReport[]
   clearAllData: () => void
+  getManagerViewData: (periodFilter: string) => ManagerViewData | null
+  getDailySummaries: (storeFilter: string, productFilter: string, periodFilter: string) => DailySummary[]
+  saveComparisonRecord: (activityId1: string, activityId2: string, winnerId: string | null, reason: string) => ComparisonRecord
+  getComparisonRecords: () => ComparisonRecord[]
 }
 
 const isToday = (dateStr: string) => {
@@ -161,6 +166,7 @@ export const useActivityStore = create<ActivityState>()(
       allFeedbacks: [],
       allAbnormalReports: [],
       activityHistory: [],
+      comparisonRecords: [],
       products: mockProducts,
       stores: mockStores,
       selectedStore: null,
@@ -338,6 +344,7 @@ export const useActivityStore = create<ActivityState>()(
           allFeedbacks: [],
           allAbnormalReports: [],
           activityHistory: [],
+          comparisonRecords: [],
           selectedStore: null,
           selectedProduct: null
         })
@@ -417,6 +424,197 @@ export const useActivityStore = create<ActivityState>()(
 
         const activityIds = new Set(filteredActivities.map(a => a.id))
         return allFeedbacks.filter(f => activityIds.has(f.activityId))
+      },
+
+      getManagerViewData: (periodFilter) => {
+        const { activityHistory, currentActivity } = get()
+        let allActivities: Activity[] = []
+        if (currentActivity && currentActivity.status !== 'pending') {
+          allActivities = [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
+        } else {
+          allActivities = [...activityHistory]
+        }
+
+        const filteredActivities = allActivities.filter(act => {
+          if (!matchPeriod(act.startTime, periodFilter)) return false
+          return act.status === 'completed' || act.status === 'ongoing'
+        })
+
+        if (filteredActivities.length === 0) return null
+
+        const calculateDimensionSummary = (activities: Activity[], getKey: (a: Activity) => string, getName: (a: Activity) => string): DimensionSummary[] => {
+          const groups: Record<string, Activity[]> = {}
+          activities.forEach(act => {
+            const key = getKey(act)
+            if (!groups[key]) groups[key] = []
+            groups[key].push(act)
+          })
+
+          return Object.entries(groups).map(([key, acts]) => {
+            const totalTasters = acts.reduce((sum, a) => sum + a.usedSamples, 0)
+            const totalPurchases = acts.reduce((sum, a) => sum + a.purchaseCount, 0)
+            const allFeedbacks = acts.flatMap(a => a.feedbacks)
+            const avgRating = allFeedbacks.length > 0
+              ? allFeedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / allFeedbacks.length
+              : 0
+            const avgConversion = totalTasters > 0 ? (totalPurchases / totalTasters) * 100 : 0
+            const abnormalCount = acts.reduce((sum, a) => sum + a.abnormalReports.length, 0)
+
+            const highConversionActivities = acts.filter(a => 
+              a.usedSamples > 0 && (a.purchaseCount / a.usedSamples) * 100 >= 30
+            )
+            const lowRatingActivities = acts.filter(a => {
+              const avg = a.feedbacks.length > 0
+                ? a.feedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / a.feedbacks.length
+                : 5
+              return avg < 3
+            })
+
+            return {
+              key,
+              name: getName(acts[0]),
+              activityCount: acts.length,
+              totalTasters,
+              totalPurchases,
+              avgConversionRate: Math.round(avgConversion * 10) / 10,
+              avgRating: Math.round(avgRating * 10) / 10,
+              abnormalCount,
+              highConversionActivities,
+              lowRatingActivities,
+              activities: acts
+            }
+          }).sort((a, b) => b.avgConversionRate - a.avgConversionRate)
+        }
+
+        const totalTasters = filteredActivities.reduce((sum, a) => sum + a.usedSamples, 0)
+        const totalPurchases = filteredActivities.reduce((sum, a) => sum + a.purchaseCount, 0)
+        const allFeedbacks = filteredActivities.flatMap(a => a.feedbacks)
+        const overallAvgRating = allFeedbacks.length > 0
+          ? Math.round((allFeedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / allFeedbacks.length) * 10) / 10
+          : 0
+        const overallConversionRate = totalTasters > 0
+          ? Math.round((totalPurchases / totalTasters) * 1000) / 10
+          : 0
+
+        return {
+          byStore: calculateDimensionSummary(
+            filteredActivities,
+            (a) => a.storeId,
+            (a) => a.storeName
+          ),
+          byProduct: calculateDimensionSummary(
+            filteredActivities,
+            (a) => a.productId,
+            (a) => a.productName
+          ),
+          byPromoter: [{
+            key: 'promoter_001',
+            name: '促销员001',
+            activityCount: filteredActivities.length,
+            totalTasters,
+            totalPurchases,
+            avgConversionRate: overallConversionRate,
+            avgRating: overallAvgRating,
+            abnormalCount: filteredActivities.reduce((sum, a) => sum + a.abnormalReports.length, 0),
+            highConversionActivities: filteredActivities.filter(a => 
+              a.usedSamples > 0 && (a.purchaseCount / a.usedSamples) * 100 >= 30
+            ),
+            lowRatingActivities: filteredActivities.filter(a => {
+              const avg = a.feedbacks.length > 0
+                ? a.feedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / a.feedbacks.length
+                : 5
+              return avg < 3
+            }),
+            activities: filteredActivities
+          }],
+          period: periodFilter,
+          totalActivities: filteredActivities.length,
+          totalTasters,
+          totalPurchases,
+          overallConversionRate,
+          overallAvgRating
+        }
+      },
+
+      getDailySummaries: (storeFilter, productFilter, periodFilter) => {
+        const { activityHistory, currentActivity } = get()
+        let allActivities: Activity[] = []
+        if (currentActivity) {
+          allActivities = [currentActivity, ...activityHistory.filter(a => a.id !== currentActivity.id)]
+        } else {
+          allActivities = [...activityHistory]
+        }
+
+        const filteredActivities = allActivities.filter(act => {
+          if (storeFilter !== '全部' && act.storeName !== storeFilter) return false
+          if (productFilter !== '全部' && !act.productName.includes(productFilter)) return false
+          if (!matchPeriod(act.startTime, periodFilter)) return false
+          return act.status === 'completed' || act.status === 'ongoing'
+        })
+
+        const groups: Record<string, Activity[]> = {}
+        filteredActivities.forEach(act => {
+          const date = dayjs(act.startTime).format('YYYY-MM-DD')
+          if (!groups[date]) groups[date] = []
+          groups[date].push(act)
+        })
+
+        return Object.entries(groups).map(([date, activities]) => {
+          const totalTasters = activities.reduce((sum, a) => sum + a.usedSamples, 0)
+          const totalPurchases = activities.reduce((sum, a) => sum + a.purchaseCount, 0)
+          const allFeedbacks = activities.flatMap(a => a.feedbacks)
+          const avgRating = allFeedbacks.length > 0
+            ? Math.round((allFeedbacks.reduce((sum, f) => sum + f.tasteRating, 0) / allFeedbacks.length) * 10) / 10
+            : 0
+          const avgConversion = totalTasters > 0
+            ? Math.round((totalPurchases / totalTasters) * 1000) / 10
+            : 0
+          const abnormalCount = activities.reduce((sum, a) => sum + a.abnormalReports.length, 0)
+
+          return {
+            date,
+            activityCount: activities.length,
+            totalTasters,
+            totalPurchases,
+            avgConversionRate: avgConversion,
+            avgRating,
+            abnormalCount,
+            activities: activities.sort((a, b) => 
+              new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+            )
+          }
+        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      },
+
+      saveComparisonRecord: (activityId1, activityId2, winnerId, reason) => {
+        const activity1 = get().getActivityById(activityId1)
+        const activity2 = get().getActivityById(activityId2)
+        
+        if (!activity1 || !activity2) {
+          throw new Error('活动不存在')
+        }
+
+        const newRecord: ComparisonRecord = {
+          id: `cmp${Date.now()}`,
+          activityId1,
+          activityId2,
+          activity1Snapshot: JSON.parse(JSON.stringify(activity1)),
+          activity2Snapshot: JSON.parse(JSON.stringify(activity2)),
+          winnerId,
+          reason,
+          createdAt: dayjs().format('YYYY-MM-DD HH:mm:ss')
+        }
+
+        set((state) => ({
+          comparisonRecords: [newRecord, ...state.comparisonRecords]
+        }))
+
+        console.log('[Comparison] 已保存对比记录:', newRecord)
+        return newRecord
+      },
+
+      getComparisonRecords: () => {
+        return get().comparisonRecords
       }
     }),
     {
@@ -428,7 +626,8 @@ export const useActivityStore = create<ActivityState>()(
         allAbnormalReports: state.allAbnormalReports,
         selectedStoreId: state.selectedStore?.id || null,
         selectedProductId: state.selectedProduct?.id || null,
-        activityHistory: state.activityHistory
+        activityHistory: state.activityHistory,
+        comparisonRecords: state.comparisonRecords
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return

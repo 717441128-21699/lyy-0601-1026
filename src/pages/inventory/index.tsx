@@ -174,10 +174,15 @@ const InventoryPage: React.FC = () => {
   }
 
   const isActivityOngoing = currentActivity?.status === 'ongoing'
-  const canModify = isActivityOngoing
+  const hasOngoingActivity = isActivityOngoing
+  const hasCompletedActivity = currentActivity?.status === 'completed'
 
   const goToReport = () => {
     Taro.switchTab({ url: '/pages/report/index' })
+  }
+
+  const goToActivity = () => {
+    Taro.switchTab({ url: '/pages/activity/index' })
   }
 
   return (
@@ -194,34 +199,43 @@ const InventoryPage: React.FC = () => {
           </View>
         )}
 
-        <View className={styles.statsGrid}>
-          <StatCard
-            title="试吃人数"
-            value={stats.tasters}
-            subtitle={`目标${stats.target}份`}
-            color="primary"
-          />
-          <StatCard
-            title="购买转化"
-            value={stats.buyers}
-            color="success"
-          />
-          <StatCard
-            title="转化率"
-            value={`${stats.rate}%`}
-            color={stats.rate >= 50 ? 'success' : stats.rate >= 30 ? 'warning' : 'error'}
-          />
-          <StatCard
-            title="剩余样品"
-            value={stats.remaining}
-            color={stats.remaining < 10 ? 'error' : 'primary'}
-          />
-        </View>
+        {hasOngoingActivity ? (
+          <>
+            <View className={styles.ongoingActivityHeader}>
+              <Text className={styles.ongoingActivityTitle}>📍 {currentActivity.storeName}</Text>
+              <Text className={styles.ongoingActivityProduct}>📦 {currentActivity.productName}</Text>
+              <View className={styles.ongoingActivityStatus}>
+                <View className={styles.statusDot}></View>
+                <Text className={styles.statusText}>活动进行中</Text>
+              </View>
+            </View>
 
-        <View className={styles.sectionCard}>
-          <Text className={styles.sectionTitle}>样品管理</Text>
-          {currentActivity ? (
-            <>
+            <View className={styles.statsGrid}>
+              <StatCard
+                title="试吃人数"
+                value={stats.tasters}
+                subtitle={`目标${stats.target}份`}
+                color="primary"
+              />
+              <StatCard
+                title="购买转化"
+                value={stats.buyers}
+                color="success"
+              />
+              <StatCard
+                title="转化率"
+                value={`${stats.rate}%`}
+                color={stats.rate >= 50 ? 'success' : stats.rate >= 30 ? 'warning' : 'error'}
+              />
+              <StatCard
+                title="剩余样品"
+                value={stats.remaining}
+                color={stats.remaining < 10 ? 'error' : 'primary'}
+              />
+            </View>
+
+            <View className={styles.sectionCard}>
+              <Text className={styles.sectionTitle}>样品管理</Text>
               <View className={styles.sampleManager}>
                 <View className={styles.sampleInfo}>
                   <Text className={styles.sampleLabel}>剩余样品数</Text>
@@ -232,25 +246,22 @@ const InventoryPage: React.FC = () => {
                 </View>
                 <View className={styles.sampleControl}>
                   <Button
-                    className={classnames(styles.sampleBtn, !canModify && styles.sampleBtnDisabled)}
+                    className={styles.sampleBtn}
                     onClick={() => handleSampleChange(-1)}
-                    disabled={!canModify}
                   >
                     -
                   </Button>
                   <Input
-                    className={classnames(styles.sampleInput, !canModify && styles.sampleInputDisabled)}
+                    className={styles.sampleInput}
                     type="number"
                     value={inputValue}
                     onInput={handleSampleInput}
                     onBlur={handleSampleBlur}
-                    disabled={!canModify}
                     placeholder="请输入"
                   />
                   <Button
-                    className={classnames(styles.sampleBtn, !canModify && styles.sampleBtnDisabled)}
+                    className={styles.sampleBtn}
                     onClick={() => handleSampleChange(1)}
-                    disabled={!canModify}
                   >
                     +
                   </Button>
@@ -267,81 +278,98 @@ const InventoryPage: React.FC = () => {
                   style={{ width: `${progressPercent}%` }}
                 ></View>
               </View>
+            </View>
 
-              {!canModify && currentActivity && (
-                <Text className={styles.sampleHint}>
-                  活动已结束，无法修改样品数量，历史数据请前往活动复盘查看
-                </Text>
-              )}
-            </>
-          ) : (
-            <Text className={styles.sampleHint}>请先在今日活动页面开始活动</Text>
-          )}
-        </View>
-
-        <View className={styles.sectionCard}>
-          <Text className={styles.sectionTitle}>异常上报</Text>
-          <View className={styles.abnormalButtons}>
-            {abnormalOptions.map((option) => (
-              <Button
-                key={option.type}
-                className={classnames(styles.abnormalBtn, styles[option.class], !canModify && styles.abnormalBtnDisabled)}
-                onClick={() => handleAbnormalClick(option.type)}
-                disabled={!canModify}
-              >
-                <Text className={styles.abnormalIcon}>{option.icon}</Text>
-                <Text className={styles.abnormalLabel}>{option.label}</Text>
-              </Button>
-            ))}
-          </View>
-
-          {commonProblems.length > 0 && (
-            <View className={styles.problemsSection}>
-              <Text className={styles.problemsTitle}>🔥 常见问题</Text>
-              <ScrollView className={styles.problemsScroll} scrollX>
-                {commonProblems.map((problem, index) => (
-                  <View key={index} className={styles.problemTag}>
-                    <Text className={styles.problemText}>{problem.label}</Text>
-                    <Text className={styles.problemCount}>{problem.count}</Text>
-                  </View>
+            <View className={styles.sectionCard}>
+              <Text className={styles.sectionTitle}>异常上报</Text>
+              <View className={styles.abnormalButtons}>
+                {abnormalOptions.map((option) => (
+                  <Button
+                    key={option.type}
+                    className={classnames(styles.abnormalBtn, styles[option.class])}
+                    onClick={() => handleAbnormalClick(option.type)}
+                  >
+                    <Text className={styles.abnormalIcon}>{option.icon}</Text>
+                    <Text className={styles.abnormalLabel}>{option.label}</Text>
+                  </Button>
                 ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
+              </View>
 
-        <View className={styles.sectionCard}>
-          <View className={styles.listHeader}>
-            <Text className={styles.listTitle}>上报记录</Text>
-            <Text className={styles.listCount}>共 {currentReports.length} 条</Text>
-          </View>
-
-          {currentReports.length > 0 ? (
-            <View className={styles.reportList}>
-              {currentReports.map((report) => (
-                <View key={report.id} className={styles.reportItem}>
-                  <View className={styles.reportHeader}>
-                    <View
-                      className={classnames(styles.reportType, styles[getTypeClass(report.type)])}
-                    >
-                      {abnormalTypeLabels[report.type]}
-                    </View>
-                    <Text className={styles.reportTime}>{formatTime(report.createdAt)}</Text>
-                  </View>
-                  <Text className={styles.reportDesc}>{report.description}</Text>
+              {commonProblems.length > 0 && (
+                <View className={styles.problemsSection}>
+                  <Text className={styles.problemsTitle}>🔥 常见问题</Text>
+                  <ScrollView className={styles.problemsScroll} scrollX>
+                    {commonProblems.map((problem, index) => (
+                      <View key={index} className={styles.problemTag}>
+                        <Text className={styles.problemText}>{problem.label}</Text>
+                        <Text className={styles.problemCount}>{problem.count}</Text>
+                      </View>
+                    ))}
+                  </ScrollView>
                 </View>
-              ))}
+              )}
             </View>
-          ) : (
-            <View className={styles.emptyReport}>
-              <EmptyState
-                title="暂无上报记录"
-                description={currentActivity ? '如发现异常情况，请及时上报' : '请先开始活动'}
-                icon="📋"
-              />
+
+            <View className={styles.sectionCard}>
+              <View className={styles.listHeader}>
+                <Text className={styles.listTitle}>本次活动上报记录</Text>
+                <Text className={styles.listCount}>共 {currentReports.length} 条</Text>
+              </View>
+
+              {currentReports.length > 0 ? (
+                <View className={styles.reportList}>
+                  {currentReports.map((report) => (
+                    <View key={report.id} className={styles.reportItem}>
+                      <View className={styles.reportHeader}>
+                        <View
+                          className={classnames(styles.reportType, styles[getTypeClass(report.type)])}
+                        >
+                          {abnormalTypeLabels[report.type]}
+                        </View>
+                        <Text className={styles.reportTime}>{formatTime(report.createdAt)}</Text>
+                      </View>
+                      <Text className={styles.reportDesc}>{report.description}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View className={styles.emptyReport}>
+                  <EmptyState
+                    title="暂无上报记录"
+                    description="如发现异常情况，请及时上报"
+                    icon="📋"
+                  />
+                </View>
+              )}
             </View>
-          )}
-        </View>
+          </>
+        ) : (
+          <View className={styles.emptyInventory}>
+            <EmptyState
+              title="暂无进行中的活动"
+              description={hasCompletedActivity 
+                ? "上一场活动已结束，历史数据请前往活动复盘查看" 
+                : "请先在今日活动页面开始一场新的试吃活动"}
+              icon="�"
+            />
+            <View className={styles.emptyActions}>
+              {hasCompletedActivity && (
+                <Button
+                  className={classnames(styles.emptyActionBtn, styles.btnSecondary)}
+                  onClick={goToReport}
+                >
+                  📊 查看历史活动
+                </Button>
+              )}
+              <Button
+                className={classnames(styles.emptyActionBtn, styles.btnPrimary)}
+                onClick={goToActivity}
+              >
+                🚀 开始新活动
+              </Button>
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       {showModal && (
